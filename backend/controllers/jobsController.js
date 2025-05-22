@@ -1,7 +1,7 @@
 const { executeQuery } = require('../Utils/executeDB');
 
 /**
- * 최신 8개 공고
+ * 랜덤 10개 공고, 임의
  */
 exports.getLatestJobs = async (req, res) => {
     const query = `
@@ -13,7 +13,7 @@ exports.getLatestJobs = async (req, res) => {
       FROM job_postings j
       JOIN companies c ON j.company_id = c.company_id
       ORDER BY RAND()
-      LIMIT 8
+      LIMIT 10
     `;
 
     try {
