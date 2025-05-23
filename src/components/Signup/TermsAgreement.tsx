@@ -27,6 +27,16 @@ const Agreement: React.FC = () => {
 
     const handleContinue = () => {
         if (agreements.terms && agreements.privacy) {
+
+            // 동의 완료 쿠키에 기록
+            document.cookie = [
+                'agreementAccepted=true',
+                'path=/',
+                'max-age=3600',       // 1시간(초 단위)
+                'sameSite=Lax',
+                process.env.NODE_ENV === 'production' ? 'secure' : ''
+            ].filter(Boolean).join('; ');
+
             navigate('/email');
         } else {
             alert('필수 약관에 모두 동의해주세요.');

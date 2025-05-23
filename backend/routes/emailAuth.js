@@ -24,8 +24,8 @@ router.post('/', async (req, res) => {
 
     // 6자리 난수 생성
     const code = Math.floor(100000 + Math.random() * 900000).toString();
-    // 2분 뒤 만료
-    codes[email] = { code, expires: Date.now() + 2 * 60 * 1000 };
+    // 3분 뒤 만료
+    codes[email] = { code, expires: Date.now() + 3 * 60 * 1000 };
 
     try {
             await transporter.sendMail({
@@ -55,6 +55,15 @@ router.post('/verify', (req, res) => {
     // 검증 완료 후 코드 삭제
     delete codes[email];
     res.json({ success: true });
+
+    // 이메일 인증 완료 후 쿠키에 남김 -> /signup 접근을 제한하기 위함
+    res.cookie('emailVerified', email, {
+        httpOnly: true,         // 클라이언트 JS 접근 차단
+        secure: process.env.NODE_ENV === 'production', // HTTPS 환경에서만
+        maxAge: 10 * 60 * 1000,  // 10분(밀리초 단위)
+        sameSite: 'lax',         // CSRF 방어용
+    });
+    return res.json({ success: true });
 });
 
 module.exports = router;

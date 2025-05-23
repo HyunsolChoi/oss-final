@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import './Signup.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser, faLock, faBriefcase, faLightbulb  } from '@fortawesome/free-solid-svg-icons';
+import {useNavigate} from "react-router-dom";
 
 const Signup: React.FC = () => {
     const [userId, setUserId] = useState('');
@@ -11,6 +12,8 @@ const Signup: React.FC = () => {
     const [showConfirm, setShowConfirm] = useState(false);
     const [job, setJob] = useState('');
     const [skills, setSkills] = useState<string[]>(['']);
+
+    const navigate = useNavigate();
 
     const addSkillField = () => {
         if (skills.length < 15) {
@@ -27,6 +30,30 @@ const Signup: React.FC = () => {
     const removeSkillField = (index: number) => {
         setSkills(skills.filter((_, i) => i !== index));
     };
+
+    useEffect(() => {
+        const cookies = document.cookie
+            .split(';')
+            .map(cookie => cookie.trim());
+
+        const hasAgreement = cookies.some(cookie =>
+            cookie.startsWith('agreementAccepted=')
+        );
+        const hasEmailVerified = cookies.some(cookie =>
+            cookie.startsWith('emailVerified=')
+        );
+
+        if (!hasAgreement) {
+            // 약관 동의가 없으면 동의 페이지로
+            alert("세션이 만료되어 동의 페이지로 이동합니다")
+            navigate('/agreement');
+        } else if (!hasEmailVerified) {
+            // 이메일 인증이 없으면 인증 페이지로
+            alert("세션이 만료되어 동의 페이지로 이동합니다")
+            navigate('/email');
+        }
+    }, [navigate]);
+
 
     return (
         <div className="signup-wrapper">
