@@ -1,19 +1,24 @@
 // src/components/Home.tsx
 import React, { useState, useEffect, FC } from 'react';
 import './Home.css';
-import { Job, getLatestJobs, getTop100Jobs, getEntryLevelJobs } from '../../api/jobs'
+import { Job, getLatestJobs, getTop100Jobs, getEntryLevelJobs, getMyJobs } from '../../api/jobs'
+import {toast} from "react-toastify";
+import {useNavigate} from "react-router-dom";
 
 interface Props {
-    activeTab: 'Top100' | 'Entry';
-    setActiveTab: (tab: 'Top100' | 'Entry') => void;
+    userId: string;
+    activeTab: 'Top100' | 'Entry' | 'MyJob';
+    setActiveTab: (tab: 'Top100' | 'Entry' | 'MyJob') => void;
 }
 
-const Home: React.FC<Props> = ({ activeTab, setActiveTab }) => {
+const Home: React.FC<Props> = ({ userId, activeTab, setActiveTab }) => {
     const [recommendJobs, setLatestJobs] = useState<Job[]>([]);
     const [topJobs,    setTopJobs]    = useState<Job[]>([]);
     const [entryJobs,  setEntryJobs]  = useState<Job[]>([]);
+    const [myJobs, setMyJobs] = useState<Job[]>([]);
 
-    const [showJobs, setShowJobs] = useState<Job[]>([]); // 실제로 화면에 나오는 공고 ( Top100, Entry )
+    //const [showJobs, setShowJobs] = useState<Job[]>([]); // 실제로 화면에 나오는 공고 ( Top100, Entry )
+    const navigate = useNavigate();
 
     useEffect(() => {
         getLatestJobs()
@@ -27,7 +32,37 @@ const Home: React.FC<Props> = ({ activeTab, setActiveTab }) => {
         getEntryLevelJobs()
             .then(setEntryJobs)
             .catch(console.error)
+
     }, [])
+
+    useEffect(() => {
+        if(userId !== ''){ // todo: 토큰으로 검사해야한다  (app)
+            getMyJobs(userId)
+                .then(setMyJobs)
+                .catch(console.error)
+        }
+    }, [userId]);
+
+    const activeTabHandler = (menu: 1 | 2 | 3) => {
+        let newTab: 'Top100' | 'Entry' | 'MyJob';
+
+        if (menu === 1) {
+            newTab = 'Top100';
+        } else if (menu === 2) {
+            newTab = 'Entry';
+        } else {
+            if(userId===''){ // todo: 토큰으로 검사해야한다  (app)
+                toast.error('로그인 후 이용 가능합니다');
+                navigate('/signin');
+                return;
+            }
+            newTab = 'MyJob';
+        }
+
+        if (activeTab !== newTab) {
+            setActiveTab(newTab);
+        }
+    };
 
     return (
         <div className="home-parent">
@@ -57,20 +92,32 @@ const Home: React.FC<Props> = ({ activeTab, setActiveTab }) => {
                     <div className="tabs">
                         <button
                             className={`tab ${activeTab === 'Top100' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('Top100')}
+                            onClick={() => activeTabHandler(1)}
                         >
                             Top100
                         </button>
                         <button
                             className={`tab ${activeTab === 'Entry' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('Entry')}
+                            onClick={() => activeTabHandler(2)}
                         >
                             신입
+                        </button>
+                        <button
+                            className={`tab ${activeTab === 'MyJob' ? 'active' : ''}`}
+                            onClick={() => activeTabHandler(3)}
+                        >
+                            나의 직무
                         </button>
                     </div>
                     <div className="list-and-graphic">
                         <div className="list-container">
-                            {(activeTab === 'Top100' ? topJobs : entryJobs).map(job => (
+                            {(
+                                activeTab === 'Top100'
+                                    ? topJobs
+                                    : activeTab === 'Entry'
+                                        ? entryJobs
+                                        : myJobs
+                            ).map(job => (
                                 <a
                                     key={job.id}
                                     href={job.link}

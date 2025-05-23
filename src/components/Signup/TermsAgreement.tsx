@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import './Signup.css';
 import './TermsAgreement.css'
 
@@ -39,7 +40,7 @@ const Agreement: React.FC = () => {
 
             navigate('/email');
         } else {
-            alert('필수 약관에 모두 동의해주세요.');
+            toast.error('필수 약관에 모두 동의해주세요.');
         }
     };
 

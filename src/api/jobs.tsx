@@ -31,6 +31,19 @@ export function getEntryLevelJobs(): Promise<Job[]> {
     return request<Job[]>('/api/jobs/entry')
 }
 
+export function getMyJobs(userId: string): Promise<Job[]> {
+    return fetch('/api/jobs/myjobs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+    })
+        .then(res => {
+            if (!res.ok) throw new Error('내 직무 공고 조회에 실패했습니다');
+            return res.json() as Promise<Job[]>;
+        });
+}
+
+
 // 이메일 인증 요청
 export function requestEmailAuth(email: string): Promise<void> {
     return fetch('/api/emailAuth', {

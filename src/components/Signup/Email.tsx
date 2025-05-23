@@ -1,6 +1,7 @@
 // src/components/Email.tsx
 import React, {useEffect, useState} from 'react';
 import { requestEmailAuth, verifyEmailAuth } from '../../api/jobs';
+import { toast } from 'react-toastify';
 import './Email.css';
 import './Signup.css';
 import {useNavigate} from "react-router-dom";
@@ -39,7 +40,7 @@ const Email: React.FC = () => {
 
     const authHandler = () => {
         if(!isVerified){
-            alert('인증 완료 후 눌러주세요');
+            toast.error('인증 완료 후 눌러주세요');
             return;
         }
         navigate('/signup');
@@ -51,11 +52,11 @@ const Email: React.FC = () => {
 
         const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailPattern.test(email)) {
-            alert('올바른 이메일 주소를 입력해주세요');
+            toast.error('올바른 이메일 주소를 입력해주세요');
             return;
         }
         if (!email) {
-            alert('이메일을 입력해주세요');
+            toast.error('이메일을 입력해주세요');
             return;
         }
 
@@ -68,7 +69,7 @@ const Email: React.FC = () => {
             await requestEmailAuth(email); // 실제 메일 보내는 함수
         } catch (err: any) {
             console.error(err);
-            alert(err.message);
+            toast.error(err.message);
             setCodeSent(false);
         } finally {
             setIsSending(false);           // 전송 중 상태 끝
@@ -80,9 +81,20 @@ const Email: React.FC = () => {
         try {
             await verifyEmailAuth(email, inputCode);
             setIsVerified(true);
+
+
+            document.cookie = [
+                'emailVerified=true',
+                'path=/',
+                'max-age=300', // 5분
+                'sameSite=Lax',
+                process.env.NODE_ENV === 'production' ? 'secure' : ''
+            ].filter(Boolean).join('; ');
+
+
         } catch (err: any) {
             console.error(err);
-            alert(err.message);
+            toast.error(err.message);
         }
     };
 

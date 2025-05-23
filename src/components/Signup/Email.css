@@ -14,14 +14,6 @@
     cursor: not-allowed;
 }
 
-.show-toggle-button:hover:not(:disabled) {
-    box-shadow: 0 6px 12px rgba(0,0,0,0.24);
-}
-
-.show-toggle-button:active:not(:disabled) {
-    box-shadow: 0 3px 6px rgba(0,0,0,0.16);
-}
-
 .show-toggle-button:disabled {
     background: #d1d5db;
     color: #9ca3af;

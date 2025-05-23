@@ -1,5 +1,7 @@
 import React, {useState} from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
 import Home from './components/Home/Home';
 import Navbar from './components/Navbar/Navbar';
@@ -10,7 +12,7 @@ import Agreement from "./components/Signup/TermsAgreement"
 import Email from "./components/Signup/Email";
 
 function App() {
-    const [activeTab, setActiveTab] = useState<'Top100' | 'Entry'>('Top100');
+    const [activeTab, setActiveTab] = useState<'Top100' | 'Entry' | 'MyJob'>('Top100');
     const [userId, setUserId] = useState('');
 
     return (
@@ -20,7 +22,7 @@ function App() {
         <Routes>
             <Route
                 path="/"
-                element={<Home activeTab={activeTab} setActiveTab={setActiveTab} />}
+                element={<Home activeTab={activeTab} setActiveTab={setActiveTab}  userId={''}/>}
             />
             <Route
                 path="/signin"
@@ -43,6 +45,15 @@ function App() {
                 element={<Consulting/>} // token 넘겨줘서 유효성 판단 후 진입 가능하도록 해야함
             ></Route>
         </Routes>
+        <ToastContainer
+            position="top-center"
+            autoClose={2000}
+            hideProgressBar
+            newestOnTop
+            closeOnClick
+            draggable={false}
+            pauseOnHover
+        />
     </BrowserRouter>
     </div>
   );

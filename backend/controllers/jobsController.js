@@ -79,3 +79,53 @@ exports.getEntryLevelJobs = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
+
+exports.getMyJobs = async (req, res) => {
+    const { userId } = req.body;
+    if (!userId) {
+        return res.status(400).json({ message: 'userId가 필요합니다.' });
+    }
+
+    try {
+        // 1. 사용자 역할(role) 조회
+        const [[user]] = await executeQuery(
+            `SELECT role FROM users WHERE user_id = ?`,
+            [userId]
+        );
+
+        if (!user) {
+            return res.status(404).json({ message: '사용자를 찾을 수 없습니다.' });
+        }
+
+        const roleKeywords = user.role.split(' ').map(k => k.trim()).filter(k => k);
+        if (roleKeywords.length === 0) {
+            return res.status(200).json([]); // 역할이 없으면 공고도 없음
+        }
+
+        // 2. 역할 키워드 기반으로 공고 검색
+        const conditions = roleKeywords.map(() => `j.title LIKE ?`).join(' OR ');
+        const values = roleKeywords.map(k => `%${k}%`);
+
+        const query = `
+            SELECT
+                j.job_posting_id AS id,
+                c.company_name AS company,
+                j.title,
+                j.link,
+                e.experience_level AS experience,
+                j.salary,
+                j.deadline
+            FROM job_postings j
+            JOIN companies c ON j.company_id = c.company_id
+            LEFT JOIN experiences e ON j.experience_id = e.experience_id
+            WHERE ${conditions};
+        `;
+
+        const [rows] = await executeQuery(query, values);
+        res.json(rows);
+
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ error: err.message });
+    }
+};

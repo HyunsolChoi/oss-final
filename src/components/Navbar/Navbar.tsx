@@ -7,8 +7,8 @@ import './Navbar.css'
 
 interface Props {
     userId: string;
-    activeTab: 'Top100' | 'Entry';
-    setActiveTab: (tab: 'Top100' | 'Entry') => void;
+    activeTab: 'Top100' | 'Entry' | 'MyJob';
+    setActiveTab: (tab: 'Top100' | 'Entry' | 'MyJob') => void;
 }
 
 const Navbar: React.FC<Props> = ({ userId, activeTab, setActiveTab }) => {
@@ -38,8 +38,15 @@ const Navbar: React.FC<Props> = ({ userId, activeTab, setActiveTab }) => {
             setPlaceholder("검색어를 입력하세요");
     }
 
-    const activeTabHandler = (menu: 1|2) => {
-        const newTab = menu === 1 ? 'Top100' : 'Entry';
+    const activeTabHandler = (menu: 1 | 2 | 3) => {
+        let newTab: 'Top100' | 'Entry' | 'MyJob';
+        if (menu === 1) {
+            newTab = 'Top100';
+        } else if (menu === 2) {
+            newTab = 'Entry';
+        } else {
+            newTab = 'MyJob';
+        }
         if (activeTab !== newTab) {
             setActiveTab(newTab);
         }
@@ -73,6 +80,18 @@ const Navbar: React.FC<Props> = ({ userId, activeTab, setActiveTab }) => {
                             }}
                         >
                             신입
+                        </a>
+                    </li>
+                    <li>
+                        <a
+                            href="#"
+                            className={scrolled && activeTab === 'MyJob' ? 'scrolled-active' : ''}
+                            onClick={(e) => {
+                                e.preventDefault();
+                                activeTabHandler(2);
+                            }}
+                        >
+                            나의 직무
                         </a>
                     </li>
                 </ul>

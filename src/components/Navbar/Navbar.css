@@ -44,6 +44,14 @@
     white-space: nowrap;
 }
 
+.navbar-links a {
+    pointer-events: none;
+}
+
+.navbar-links.scrolled a {
+    pointer-events: auto;
+}
+
 .navbar-links li a {
     text-decoration: none;
     color: white;

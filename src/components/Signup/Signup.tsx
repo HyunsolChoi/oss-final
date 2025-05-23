@@ -2,6 +2,7 @@ import React, {useEffect, useState} from 'react';
 import './Signup.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser, faLock, faBriefcase, faLightbulb  } from '@fortawesome/free-solid-svg-icons';
+import { toast } from 'react-toastify';
 import {useNavigate} from "react-router-dom";
 
 const Signup: React.FC = () => {
@@ -45,14 +46,14 @@ const Signup: React.FC = () => {
 
         if (!hasAgreement) {
             // 약관 동의가 없으면 동의 페이지로
-            alert("세션이 만료되어 동의 페이지로 이동합니다")
+            toast.error("세션이 만료되어 동의 페이지로 이동합니다")
             navigate('/agreement');
         } else if (!hasEmailVerified) {
             // 이메일 인증이 없으면 인증 페이지로
-            alert("세션이 만료되어 동의 페이지로 이동합니다")
+            toast.error("세션이 만료되어 이메일 인증 페이지로 이동합니다")
             navigate('/email');
         }
-    }, [navigate]);
+    }, []);
 
 
     return (

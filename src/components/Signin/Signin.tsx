@@ -48,9 +48,11 @@ const Signin: React.FC<Props> = ({ userId, setUserId }) => {
             <button className="login-button">로그인</button>
 
             <div className="link-row">
+                <a href="#">아이디 찾기</a>
+                <span>|</span>
                 <a href="#">비밀번호 재설정</a>
                 <span>|</span>
-                <a href="/signup">회원가입</a>
+                <a href="/agreement">회원가입</a>
             </div>
         </div>
     );
