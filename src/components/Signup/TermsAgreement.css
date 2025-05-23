@@ -1,0 +1,69 @@
+/* 제목 스타일 */
+.signup-wrapper h2 {
+    margin-bottom: 24px;
+    font-size: 24px;
+    color: #333;
+}
+
+/* 체크박스 그룹 */
+.input-group {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    margin: 12px 0;
+}
+
+/* 체크박스 자체 */
+.input-group input[type="checkbox"] {
+    margin-right: 8px;
+    width: 16px;
+    height: 16px;
+    accent-color: #6366f1;
+}
+
+/* 라벨 텍스트 */
+.input-group label {
+    font-size: 14px;
+    color: #555;
+    line-height: 1.2;
+}
+
+/* 필수 표시 (*) 스타일 */
+.input-group label span {
+    color: #d00;
+    margin-left: 2px;
+}
+
+/* 계속 버튼: 비활성화 상태 */
+.signup-button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.agreement-description {
+    margin: 12px 0 5px 0;
+    padding: 8px 8px 8px 6px;
+    background-color: #F3F4F6;
+    border-radius: 10px;
+}
+
+.bullet-item {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+.pointer-description {
+    flex: 0 0 1em;      /* 고정 너비 */
+    text-align: center;
+    color: #374151;
+}
+
+.text-description {
+    flex: 1;
+    color: #374151;
+    font-size: 13px;
+    line-height: 1.4;
+    text-align: left;
+}
+

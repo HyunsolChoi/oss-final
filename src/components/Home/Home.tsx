@@ -13,6 +13,8 @@ const Home: React.FC<Props> = ({ activeTab, setActiveTab }) => {
     const [topJobs,    setTopJobs]    = useState<Job[]>([]);
     const [entryJobs,  setEntryJobs]  = useState<Job[]>([]);
 
+    const [showJobs, setShowJobs] = useState<Job[]>([]); // 실제로 화면에 나오는 공고 ( Top100, Entry )
+
     useEffect(() => {
         getLatestJobs()
             .then(setLatestJobs)
@@ -57,7 +59,7 @@ const Home: React.FC<Props> = ({ activeTab, setActiveTab }) => {
                             className={`tab ${activeTab === 'Top100' ? 'active' : ''}`}
                             onClick={() => setActiveTab('Top100')}
                         >
-                            Top 100
+                            Top100
                         </button>
                         <button
                             className={`tab ${activeTab === 'Entry' ? 'active' : ''}`}

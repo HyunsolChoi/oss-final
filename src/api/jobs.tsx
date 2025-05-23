@@ -1,5 +1,3 @@
-// frontend/src/api/jobs.tsx
-
 export interface Job {
     id: number
     company: string
@@ -32,3 +30,29 @@ export function getTop100Jobs(): Promise<Job[]> {
 export function getEntryLevelJobs(): Promise<Job[]> {
     return request<Job[]>('/api/jobs/entry')
 }
+
+// 이메일 인증 요청
+export function requestEmailAuth(email: string): Promise<void> {
+    return fetch('/api/emailAuth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+    }).then(res => {
+        if (!res.ok) throw new Error('인증 메일 전송 실패');
+    });
+}
+
+// 이메일 인증 코드 검증
+export function verifyEmailAuth(email: string, code: string): Promise<void> {
+    return fetch('/api/emailAuth/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code }),
+    }).then(async res => {
+        if (!res.ok) {
+            const { message } = await res.json();
+            throw new Error(message || '인증 실패');
+        }
+    });
+}
+

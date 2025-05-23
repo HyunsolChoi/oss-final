@@ -1,6 +1,6 @@
 // src/components/Navbar.tsx
 import React, {useEffect, useState} from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircleUser, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
 import './Navbar.css'
@@ -14,10 +14,9 @@ interface Props {
 const Navbar: React.FC<Props> = ({ userId, activeTab, setActiveTab }) => {
     const [scrolled, setScrolled] = useState(false);
     const [placeholder, setPlaceholder] = useState('검색어를 입력하세요');
-    const [prevActiveTab, setPrevActiveTab] = useState(1);
 
-    // const navigate = useNavigate()
-    //
+    const navigate = useNavigate();
+
     // const logout = () => {
     //     // 토큰 삭제 등 로그아웃 처리
     // }
@@ -39,27 +38,18 @@ const Navbar: React.FC<Props> = ({ userId, activeTab, setActiveTab }) => {
             setPlaceholder("검색어를 입력하세요");
     }
 
-    const activeTabHandler = ( menu: number) => {
-        if(menu===1){
-            if(prevActiveTab !== 1){
-                setActiveTab('Top100');
-                setPrevActiveTab(1);
-            }
-            window.scrollTo({ top: 515, behavior: 'smooth' });
+    const activeTabHandler = (menu: 1|2) => {
+        const newTab = menu === 1 ? 'Top100' : 'Entry';
+        if (activeTab !== newTab) {
+            setActiveTab(newTab);
         }
-        else if(menu===2){
-            if(prevActiveTab !== 2){
-                setActiveTab('Entry');
-                setPrevActiveTab(2);
-            }
-            window.scrollTo({ top: 515, behavior: 'smooth' });
-        }
-    }
+        window.scrollTo({ top: 515, behavior: 'smooth' });
+    };
 
     return (
         <nav className="navbar-wrapper">
             <div className="navbar">
-                <div className="navbar-logo">CareerFit</div>
+                <div className="navbar-logo" onClick={() => navigate('/')}>CareerFit</div>
                 <ul className={`navbar-links ${scrolled ? 'scrolled' : ''}`}>
                     <li>
                         <a
@@ -94,7 +84,13 @@ const Navbar: React.FC<Props> = ({ userId, activeTab, setActiveTab }) => {
                         <FontAwesomeIcon icon={faMagnifyingGlass}/>
                     </button>
                 </div>
-                <FontAwesomeIcon className="user-icon" icon={faCircleUser}/>
+                {userId !== '' ? (
+                    <FontAwesomeIcon className="user-icon" icon={faCircleUser} />
+                ) : (
+                    <div className="auth-links scrolled-auth-links">
+                        <a href="/signin">로그인</a><span className="divider">|</span><a href="/agreement">회원가입</a>
+                    </div>
+                )}
             </div>
         </nav>
     )
