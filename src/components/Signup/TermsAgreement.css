@@ -54,7 +54,9 @@
 }
 
 .pointer-description {
-    flex: 0 0 1em;      /* 고정 너비 */
+    position: relative;
+    bottom: 4px;
+    flex: 0 0 1em;
     text-align: center;
     color: #374151;
 }
@@ -67,3 +69,58 @@
     text-align: left;
 }
 
+/* 약관 보기 모달 */
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+}
+
+.modal-box {
+    background: #fff;
+    padding: 24px;
+    border-radius: 0;
+    width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+}
+
+.modal-box h4 {
+    margin-bottom: 3px;
+}
+
+.modal-box .pointer-description {
+    display: inline-block;
+    text-align: left;
+    width: 10px;
+    top: 1px;
+    padding-right: 4px;
+}
+
+.modal-box .description {
+    font-size: 15px;
+    text-align: left;
+    align-items: flex-start;
+}
+
+.modal-box .text-1 {
+    display: inline-block;
+    vertical-align: top;
+    line-height: 25px;
+}
+
+.modal-box .text {
+    display: inline-block;
+    width: calc(100% - 1em);
+    vertical-align: top;
+    line-height: 25px;
+}

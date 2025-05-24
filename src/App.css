@@ -2,3 +2,6 @@
   text-align: center;
 }
 
+.Toastify__toast {
+  font-size: 15px; /* 원하는 크기로 조절 */
+}

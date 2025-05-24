@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { ToastContainer } from 'react-toastify';
+import {BrowserRouter, Routes, Route, useNavigate} from 'react-router-dom';
+import {toast, ToastContainer} from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
 import Home from './components/Home/Home';
@@ -15,14 +15,35 @@ function App() {
     const [activeTab, setActiveTab] = useState<'Top100' | 'Entry' | 'MyJob'>('Top100');
     const [userId, setUserId] = useState('');
 
+    const navigate = useNavigate();
+
+    const activeTabHandler = (menu: 1 | 2 | 3) => {
+        let newTab: 'Top100' | 'Entry' | 'MyJob';
+        if (menu === 1) {
+            newTab = 'Top100';
+        } else if (menu === 2) {
+            newTab = 'Entry';
+        } else {
+            if(userId===''){ // todo: 토큰으로 검사해야한다  (app)
+                toast.error('로그인 후 이용 가능합니다');
+                navigate('/signin');
+                return;
+            }
+            newTab = 'MyJob';
+        }
+        if (activeTab !== newTab) {
+            setActiveTab(newTab);
+        }
+        window.scrollTo({ top: 515, behavior: 'smooth' });
+    };
+
     return (
     <div>
-    <BrowserRouter>
-        <Navbar activeTab={activeTab} setActiveTab={setActiveTab}  userId={''}/> {/*임의 아이디*/}
+        <Navbar activeTab={activeTab} setActiveTab={setActiveTab} activeTabHandler={activeTabHandler} userId={''}/> {/*임의 아이디*/}
         <Routes>
             <Route
                 path="/"
-                element={<Home activeTab={activeTab} setActiveTab={setActiveTab}  userId={''}/>}
+                element={<Home activeTab={activeTab} setActiveTab={setActiveTab} activeTabHandler={activeTabHandler} userId={''}/>}
             />
             <Route
                 path="/signin"
@@ -54,7 +75,6 @@ function App() {
             draggable={false}
             pauseOnHover
         />
-    </BrowserRouter>
     </div>
   );
 }

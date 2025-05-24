@@ -2,16 +2,16 @@
 import React, { useState, useEffect, FC } from 'react';
 import './Home.css';
 import { Job, getLatestJobs, getTop100Jobs, getEntryLevelJobs, getMyJobs } from '../../api/jobs'
-import {toast} from "react-toastify";
 import {useNavigate} from "react-router-dom";
 
 interface Props {
     userId: string;
     activeTab: 'Top100' | 'Entry' | 'MyJob';
     setActiveTab: (tab: 'Top100' | 'Entry' | 'MyJob') => void;
+    activeTabHandler: (menu: 1 | 2 | 3) => void;
 }
 
-const Home: React.FC<Props> = ({ userId, activeTab, setActiveTab }) => {
+const Home: React.FC<Props> = ({ userId, activeTab, setActiveTab, activeTabHandler }) => {
     const [recommendJobs, setLatestJobs] = useState<Job[]>([]);
     const [topJobs,    setTopJobs]    = useState<Job[]>([]);
     const [entryJobs,  setEntryJobs]  = useState<Job[]>([]);
@@ -43,47 +43,34 @@ const Home: React.FC<Props> = ({ userId, activeTab, setActiveTab }) => {
         }
     }, [userId]);
 
-    const activeTabHandler = (menu: 1 | 2 | 3) => {
-        let newTab: 'Top100' | 'Entry' | 'MyJob';
-
-        if (menu === 1) {
-            newTab = 'Top100';
-        } else if (menu === 2) {
-            newTab = 'Entry';
-        } else {
-            if(userId===''){ // todo: 토큰으로 검사해야한다  (app)
-                toast.error('로그인 후 이용 가능합니다');
-                navigate('/signin');
-                return;
-            }
-            newTab = 'MyJob';
-        }
-
-        if (activeTab !== newTab) {
-            setActiveTab(newTab);
-        }
-    };
-
     return (
         <div className="home-parent">
             <div className="home-children">
+
                 {/* --- 상단: 5x2 정사각 카드 --- */}
                 <section className="section-recommend">
                     <h2 style={{color: '#1e293b'}}>AI-추천공고</h2>
-                    <div className="recommend-container">
-                        {recommendJobs.map(job => (
-                            <a
-                                key={job.id}
-                                href={job.link}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="recommend-card"
-                            >
-                                <div className="title">{job.title}</div>
-                                <div className="company">{job.company}</div>
-                                <div className="deadline">기한: {job.deadline}</div>
-                            </a>
-                        ))}
+                    <div className="recommend-wrapper">
+                        <div className="recommend-container">
+                            {recommendJobs.map(job => (
+                                <a
+                                    key={job.id}
+                                    href={job.link}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="recommend-card"
+                                >
+                                    <div className="title">{job.title}</div>
+                                    <div className="company">{job.company}</div>
+                                    <div className="deadline">기한: {job.deadline}</div>
+                                </a>
+                            ))}
+                        </div>
+                        {userId === '' && (
+                            <div className="glass-overlay" onClick={()=> navigate("/signin")}>
+                                로그인 후 공고를 추천 받아보세요
+                            </div>
+                        )}
                     </div>
                 </section>
 

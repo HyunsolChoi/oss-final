@@ -9,9 +9,10 @@ interface Props {
     userId: string;
     activeTab: 'Top100' | 'Entry' | 'MyJob';
     setActiveTab: (tab: 'Top100' | 'Entry' | 'MyJob') => void;
+    activeTabHandler: (menu: 1 | 2 | 3) => void;
 }
 
-const Navbar: React.FC<Props> = ({ userId, activeTab, setActiveTab }) => {
+const Navbar: React.FC<Props> = ({ userId, activeTab, setActiveTab, activeTabHandler }) => {
     const [scrolled, setScrolled] = useState(false);
     const [placeholder, setPlaceholder] = useState('검색어를 입력하세요');
 
@@ -37,21 +38,6 @@ const Navbar: React.FC<Props> = ({ userId, activeTab, setActiveTab }) => {
         else
             setPlaceholder("검색어를 입력하세요");
     }
-
-    const activeTabHandler = (menu: 1 | 2 | 3) => {
-        let newTab: 'Top100' | 'Entry' | 'MyJob';
-        if (menu === 1) {
-            newTab = 'Top100';
-        } else if (menu === 2) {
-            newTab = 'Entry';
-        } else {
-            newTab = 'MyJob';
-        }
-        if (activeTab !== newTab) {
-            setActiveTab(newTab);
-        }
-        window.scrollTo({ top: 515, behavior: 'smooth' });
-    };
 
     return (
         <nav className="navbar-wrapper">
@@ -88,7 +74,7 @@ const Navbar: React.FC<Props> = ({ userId, activeTab, setActiveTab }) => {
                             className={scrolled && activeTab === 'MyJob' ? 'scrolled-active' : ''}
                             onClick={(e) => {
                                 e.preventDefault();
-                                activeTabHandler(2);
+                                activeTabHandler(3);
                             }}
                         >
                             나의 직무
