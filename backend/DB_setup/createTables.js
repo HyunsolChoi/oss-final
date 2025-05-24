@@ -171,6 +171,18 @@ async function createTables() {
                 FOREIGN KEY (user_education_id) REFERENCES user_educations(user_education_id)
             );`,
 
+            // GPT 컨설팅 관리 테이블
+            `CREATE TABLE IF NOT EXISTS consultations (
+                consultation_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                user_id CHAR(30) NOT NULL,
+                job_posting_id BIGINT NOT NULL,
+                requested_at DATETIME NOT NULL,
+                gpt_input JSON NOT NULL,
+                gpt_output JSON NOT NULL,
+                FOREIGN KEY (user_id) REFERENCES users(user_id),
+                FOREIGN KEY (job_posting_id) REFERENCES job_postings(job_posting_id)
+            );`,
+
             // // 16. 북마크 정보 저장 테이블
             // `CREATE TABLE IF NOT EXISTS bookmarks (
             //     user_id CHAR(30) NOT NULL,
