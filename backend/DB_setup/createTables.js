@@ -48,18 +48,33 @@ async function createTables() {
             );`,
 
             // 7. 사용자 정보 테이블
+            // sha256 hash값 저장을 위해 password는 CHAR(64)
             `CREATE TABLE IF NOT EXISTS users (
-                user_id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                email VARCHAR(255) NOT NULL UNIQUE,
-                password VARCHAR(255) NOT NULL,
-                name VARCHAR(255) NOT NULL
+                user_id CHAR(30) PRIMARY KEY,
+                email VARCHAR(30) NOT NULL UNIQUE,
+                password CHAR(64) NOT NULL, 
+                sector VARCHAR(30) NOT NULL
+            );`,
+
+            // 스킬 테이블
+            `CREATE TABLE IF NOT EXISTS skills (
+                skill_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+                name VARCHAR(100) UNIQUE
+            );`,
+
+            // 사용자 - 스킬 매핑 테이블
+            `CREATE TABLE user_skills (
+              user_id CHAR(30),
+              skill_id BIGINT,
+              PRIMARY KEY (user_id, skill_id),
+              FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+              FOREIGN KEY (skill_id) REFERENCES skills(skill_id)
             );`,
 
             // 8. 채용 정보 테이블
             `CREATE TABLE IF NOT EXISTS job_postings (
                 job_posting_id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                company_id BIGINT NOT NULL,
-                user_id BIGINT NOT NULL DEFAULT 1,
+                company_id BIGINT NOT NULL,                
                 title TEXT NOT NULL,
                 link TEXT NOT NULL,
                 link_hash CHAR(64) NOT NULL UNIQUE,
@@ -72,7 +87,6 @@ async function createTables() {
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (company_id) REFERENCES companies(company_id),
                 FOREIGN KEY (education_id) REFERENCES educations(education_id),
-                FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
                 FOREIGN KEY (employment_type_id) REFERENCES employment_types(employment_type_id)
             );`,
 
@@ -112,45 +126,60 @@ async function createTables() {
                 FOREIGN KEY (sector_id) REFERENCES sectors(sector_id) ON DELETE CASCADE
             );`,
 
-            // 13. 리프레시 토큰 테이블
-            `CREATE TABLE IF NOT EXISTS refresh_tokens (
+            // 13. 유저 토큰 테이블
+            `CREATE TABLE IF NOT EXISTS user_tokens (
                 token_id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                user_id BIGINT NOT NULL,
-                refresh_token VARCHAR(512) NOT NULL UNIQUE,
+                user_id CHAR(30) NOT NULL,
+                refresh_token VARCHAR(255) NOT NULL UNIQUE,
                 expires_at DATETIME NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
             );`,
 
             // 14. 로그인 이력 테이블
             `CREATE TABLE IF NOT EXISTS login_history (
                 id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                user_id BIGINT NOT NULL,
+                user_id CHAR(30) NOT NULL,
                 login_time DATETIME NOT NULL,
                 FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
             );`,
 
-            // 15. 지원 정보 테이블
-            `CREATE TABLE IF NOT EXISTS applications (
-                application_id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                user_id BIGINT NOT NULL,
-                job_posting_id BIGINT NOT NULL,
-                status ENUM('지원 중', '취소됨', '채용 완료', '탈락') NOT NULL DEFAULT '지원 중',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
-                FOREIGN KEY (job_posting_id) REFERENCES job_postings(job_posting_id) ON DELETE CASCADE
+            // 사용자의 지역 테이블 (도 단위)
+            `CREATE TABLE IF NOT EXISTS user_locations (
+              location_id INT AUTO_INCREMENT PRIMARY KEY,
+              location_name VARCHAR(30) UNIQUE
             );`,
 
-            // 16. 북마크 정보 저장 테이블
-            `CREATE TABLE IF NOT EXISTS bookmarks (
-                user_id BIGINT NOT NULL,
-                job_posting_id BIGINT NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                PRIMARY KEY (user_id, job_posting_id),
+            // 사용자 지역 매핑
+            `CREATE TABLE IF NOT EXISTS user_location_mapping (
+                user_id CHAR(30),
+                location_id INT,
+                PRIMARY KEY (user_id, location_id),
                 FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
-                FOREIGN KEY (job_posting_id) REFERENCES job_postings(job_posting_id) ON DELETE CASCADE
-            );`
+                FOREIGN KEY (location_id) REFERENCES user_locations(location_id)
+            );`,
+
+            `CREATE TABLE IF NOT EXISTS user_educations (
+                user_education_id INT AUTO_INCREMENT PRIMARY KEY,
+                education_name CHAR(30) NOT NULL
+            )`,
+
+            `CREATE TABLE IF NOT EXISTS user_educations_mapping (
+                user_id CHAR(30) NOT NULL,
+                user_education_id INT NOT NULL,
+                PRIMARY KEY (user_id, user_education_id),
+                FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+                FOREIGN KEY (user_education_id) REFERENCES user_educations(user_education_id)
+            );`,
+
+            // // 16. 북마크 정보 저장 테이블
+            // `CREATE TABLE IF NOT EXISTS bookmarks (
+            //     user_id CHAR(30) NOT NULL,
+            //     job_posting_id BIGINT NOT NULL,
+            //     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            //     PRIMARY KEY (user_id, job_posting_id),
+            //     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+            //     FOREIGN KEY (job_posting_id) REFERENCES job_postings(job_posting_id) ON DELETE CASCADE
+            // );`
         ];
 
         let cntErr = 0;
@@ -165,9 +194,34 @@ async function createTables() {
             }
         }
 
+        // 모든 테이블 생성 후 트리거 추가
+        // 아무도 참조하지 않는 스킬은 테이블에서 제거 되도록
+        try {
+            await connection.query(`
+              CREATE TRIGGER delete_unreferenced_skills
+              AFTER DELETE ON user_skills
+              FOR EACH ROW
+              BEGIN
+                DECLARE count_refs INT;
+            
+                SELECT COUNT(*) INTO count_refs
+                FROM user_skills
+                WHERE skill_id = OLD.skill_id;
+            
+                IF count_refs = 0 THEN
+                  DELETE FROM skills WHERE skill_id = OLD.skill_id;
+                END IF;
+              END;
+            `);
+
+            console.log('트리거가 생성되었습니다.');
+        } catch (error) {
+            console.error('트리거 생성 중 오류:', error.message);
+        }
+
         try{
             if(cntErr === 0) {
-                await connection.query(`INSERT INTO users (email, password, name) VALUES ('admin@example.com', 'MTIzNDU=', 'Admin');`)
+                await connection.query(`INSERT INTO users (user_id, email, password, sector) VALUES ('admin123','admin@example.com', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', '백엔드');`)
                 console.error("관리자 계정 생성 완료");
             }
         } catch (error) {

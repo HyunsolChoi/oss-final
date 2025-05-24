@@ -125,6 +125,16 @@ async function insertData(dataArray) {
             WHERE employment_type_id IS NULL;
         `);
 
+        // 사용자 학력 정보 테이블 초기값 삽입
+        const educationValues = ['중졸', '고졸', '학사', '전문학사', '석사', '박사', '미입력'];
+
+        for (const edu of educationValues) {
+            await connection.execute(
+                'INSERT IGNORE INTO user_educations (education_name) VALUES (?)',
+                [edu]
+            );
+        }
+
         await connection.end();
         console.log('데이터베이스 연결이 종료되었습니다.');
     } catch (error) {
