@@ -60,8 +60,8 @@ exports.getEntryLevelJobs = async (req, res) => {
         c.company_name      AS company,
         j.title,
         j.link,
+        j.views,
         e.experience_level  AS experience,
-        j.salary,
         j.deadline
       FROM job_postings j
       JOIN companies c ON j.company_id = c.company_id

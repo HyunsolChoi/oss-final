@@ -20,6 +20,58 @@ const Home: React.FC<Props> = ({ userId, activeTab, setActiveTab, activeTabHandl
     //const [showJobs, setShowJobs] = useState<Job[]>([]); // 실제로 화면에 나오는 공고 ( Top100, Entry )
     const navigate = useNavigate();
 
+    const renderCurrentJobs = (
+        activeTab: 'Top100' | 'Entry' | 'MyJob',
+        topJobs: Job[],
+        entryJobs: Job[],
+        myJobs: Job[]
+    ): React.ReactNode => {
+        const currentJobs =
+            activeTab === 'Top100'
+                ? topJobs
+                : activeTab === 'Entry'
+                    ? entryJobs
+                    : myJobs;
+
+        if (currentJobs.length === 0) {
+            return (
+                <div style={{
+                    width: '100%',
+                    textAlign: 'center',
+                    color: '#64748b',
+                    fontSize: '1rem',
+                    padding: '40px 0'
+                }}>
+                    공고가 없습니다
+                </div>
+            );
+        }
+
+        return currentJobs.map(job => (
+            <a
+                key={job.id}
+                href={job.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rect-card"
+            >
+                <div className="info">
+                    <div className="title">{job.title}</div>
+                    <div className="meta">
+                        <span>{job.company}</span>
+                        {job.experience && <span>{job.experience}</span>}
+                        {job.salary && <span>{job.salary}</span>}
+                        {job.views !== undefined && (
+                            <span>조회수 {job.views.toLocaleString()}회</span>
+                        )}
+                    </div>
+                </div>
+                <div className="deadline">{job.deadline}</div>
+            </a>
+        ));
+    };
+
+
     useEffect(() => {
         getLatestJobs()
             .then(setLatestJobs)
@@ -98,32 +150,9 @@ const Home: React.FC<Props> = ({ userId, activeTab, setActiveTab, activeTabHandl
                     </div>
                     <div className="list-and-graphic">
                         <div className="list-container">
-                            {(
-                                activeTab === 'Top100'
-                                    ? topJobs
-                                    : activeTab === 'Entry'
-                                        ? entryJobs
-                                        : myJobs
-                            ).map(job => (
-                                <a
-                                    key={job.id}
-                                    href={job.link}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="rect-card"
-                                >
-                                    <div className="info">
-                                        <div className="title">{job.title}</div>
-                                        <div className="meta">
-                                            <span>{job.company}</span>
-                                            {job.experience && <span>{job.experience}</span>}
-                                            {job.salary && <span>{job.salary}</span>}
-                                        </div>
-                                    </div>
-                                    <div className="deadline">{job.deadline}</div>
-                                </a>
-                            ))}
+                            {renderCurrentJobs(activeTab, topJobs, entryJobs, myJobs)}
                         </div>
+
                         <div className="graphic">여백</div>
                     </div>
                 </section>

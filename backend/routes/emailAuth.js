@@ -52,17 +52,18 @@ router.post('/verify', (req, res) => {
     ) {
         return res.status(400).json({ success: false, message: '인증 실패' });
     }
+
     // 검증 완료 후 코드 삭제
     delete codes[email];
-    res.json({ success: true });
 
-    // 이메일 인증 완료 후 쿠키에 남김 -> /signup 접근을 제한하기 위함
     res.cookie('emailVerified', email, {
-        httpOnly: true,         // 클라이언트 JS 접근 차단
-        secure: process.env.NODE_ENV === 'production', // HTTPS 환경에서만
-        maxAge: 10 * 60 * 1000,  // 10분(밀리초 단위)
-        sameSite: 'lax',         // CSRF 방어용
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 10 * 60 * 1000,
+        sameSite: 'lax',
     });
+
+    // 응답 보내기
     return res.json({ success: true });
 });
 
