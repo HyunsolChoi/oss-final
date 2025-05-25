@@ -1,5 +1,3 @@
-// frontend/src/api/jobs.tsx
-
 export interface Job {
     id: number
     company: string
@@ -11,7 +9,7 @@ export interface Job {
     employmentType?: string
     salary?: string
     views?: number
-    sector?: string
+    sectors?: string
     deadline: string
 }
 
@@ -32,3 +30,17 @@ export function getTop100Jobs(): Promise<Job[]> {
 export function getEntryLevelJobs(): Promise<Job[]> {
     return request<Job[]>('/api/jobs/entry')
 }
+
+export async function getMyJobs(userId: string): Promise<Job[]> {
+    const res = await fetch('/api/jobs/myjobs', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({userId}),
+    })
+    if (!res.ok)
+        throw new Error('내 직무 공고 조회에 실패했습니다')
+    return (await res.json() as Promise<Job[]>)
+}
+
+
+
