@@ -73,22 +73,20 @@ async function createTables() {
 
             // 8. 채용 정보 테이블
             `CREATE TABLE IF NOT EXISTS job_postings (
-                job_posting_id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                company_id BIGINT NOT NULL,                
-                title TEXT NOT NULL,
-                link TEXT NOT NULL,
-                link_hash CHAR(64) NOT NULL UNIQUE,
-                education_id BIGINT,
-                deadline VARCHAR(20),
-                views INT DEFAULT 0,
-                employment_type_id BIGINT,
-                salary VARCHAR(64) DEFAULT '추후 협의',
-                last_modified_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (company_id) REFERENCES companies(company_id),
-                FOREIGN KEY (education_id) REFERENCES educations(education_id),
-                FOREIGN KEY (employment_type_id) REFERENCES employment_types(employment_type_id)
-            );`,
+                 job_posting_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                 company_id BIGINT NOT NULL,
+                 title TEXT NOT NULL,
+                 link TEXT NOT NULL,
+                 link_hash CHAR(64) NOT NULL UNIQUE,
+                 education_id BIGINT,
+                 deadline VARCHAR(20),
+                 views INT DEFAULT 0,
+                 salary VARCHAR(64) DEFAULT '추후 협의',
+                 last_modified_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                 FOREIGN KEY (company_id) REFERENCES companies(company_id),
+                 FOREIGN KEY (education_id) REFERENCES educations(education_id)
+             );`,
 
             // 9. 채용-경력 매핑 테이블
             `CREATE TABLE IF NOT EXISTS job_posting_experiences (
@@ -177,21 +175,20 @@ async function createTables() {
                 user_id CHAR(30) NOT NULL,
                 job_posting_id BIGINT NOT NULL,
                 requested_at DATETIME NOT NULL,
-                gpt_input JSON NOT NULL,
                 gpt_output JSON NOT NULL,
                 FOREIGN KEY (user_id) REFERENCES users(user_id),
                 FOREIGN KEY (job_posting_id) REFERENCES job_postings(job_posting_id)
             );`,
 
-            // // 16. 북마크 정보 저장 테이블
-            // `CREATE TABLE IF NOT EXISTS bookmarks (
-            //     user_id CHAR(30) NOT NULL,
-            //     job_posting_id BIGINT NOT NULL,
-            //     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            //     PRIMARY KEY (user_id, job_posting_id),
-            //     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
-            //     FOREIGN KEY (job_posting_id) REFERENCES job_postings(job_posting_id) ON DELETE CASCADE
-            // );`
+             // 16. 북마크 정보 저장 테이블
+             `CREATE TABLE IF NOT EXISTS bookmarks (
+                 user_id CHAR(30) NOT NULL,
+                 job_posting_id BIGINT NOT NULL,
+                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                 PRIMARY KEY (user_id, job_posting_id),
+                 FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+                 FOREIGN KEY (job_posting_id) REFERENCES job_postings(job_posting_id) ON DELETE CASCADE
+             );`
         ];
 
         let cntErr = 0;

@@ -66,7 +66,7 @@ const Home: FC = () => {
                         {(activeTab === 'Top100' ? topJobs : entryJobs).map(job => (
                             <a
                                 key={job.id}
-                                href={job.link}
+                                href={"/consult"}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="rect-card"
