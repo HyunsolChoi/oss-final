@@ -9,7 +9,7 @@ export interface Job {
     employmentType?: string
     salary?: string
     views?: number
-    sector?: string
+    sectors?: string
     deadline: string
 }
 
@@ -31,41 +31,16 @@ export function getEntryLevelJobs(): Promise<Job[]> {
     return request<Job[]>('/api/jobs/entry')
 }
 
-export function getMyJobs(userId: string): Promise<Job[]> {
-    return fetch('/api/jobs/myjobs', {
+export async function getMyJobs(userId: string): Promise<Job[]> {
+    const res = await fetch('/api/jobs/myjobs', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId }),
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({userId}),
     })
-        .then(res => {
-            if (!res.ok) throw new Error('내 직무 공고 조회에 실패했습니다');
-            return res.json() as Promise<Job[]>;
-        });
+    if (!res.ok)
+        throw new Error('내 직무 공고 조회에 실패했습니다')
+    return (await res.json() as Promise<Job[]>)
 }
 
 
-// 이메일 인증 요청
-export function requestEmailAuth(email: string): Promise<void> {
-    return fetch('/api/emailAuth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-    }).then(res => {
-        if (!res.ok) throw new Error('인증 메일 전송 실패');
-    });
-}
-
-// 이메일 인증 코드 검증
-export function verifyEmailAuth(email: string, code: string): Promise<void> {
-    return fetch('/api/emailAuth/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, code }),
-    }).then(async res => {
-        if (!res.ok) {
-            const { message } = await res.json();
-            throw new Error(message || '인증 실패');
-        }
-    });
-}
 

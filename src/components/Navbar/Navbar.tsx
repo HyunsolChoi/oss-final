@@ -1,5 +1,5 @@
 // src/components/Navbar.tsx
-import React, {useEffect, useState} from 'react'
+import React, {useEffect, useRef, useState} from 'react'
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircleUser, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
@@ -15,12 +15,17 @@ interface Props {
 const Navbar: React.FC<Props> = ({ userId, activeTab, setActiveTab, activeTabHandler }) => {
     const [scrolled, setScrolled] = useState(false);
     const [placeholder, setPlaceholder] = useState('검색어를 입력하세요');
+    const [showDropdown, setShowDropdown] = useState(false);
 
+    const dropdownRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
 
-    // const logout = () => {
-    //     // 토큰 삭제 등 로그아웃 처리
-    // }
+    const signout = () => {
+        localStorage.removeItem('token-careerfit');
+        localStorage.removeItem('careerfit-id');
+        navigate("/");
+        window.location.reload();
+    }
 
     useEffect(() => {
         const handleScroll = () => {
@@ -31,12 +36,35 @@ const Navbar: React.FC<Props> = ({ userId, activeTab, setActiveTab, activeTabHan
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                dropdownRef.current &&
+                !dropdownRef.current.contains(event.target as Node)
+            ) {
+                setShowDropdown(false);
+            }
+        };
+
+        if (showDropdown) {
+            document.addEventListener('mousedown', handleClickOutside);
+        } else {
+            document.removeEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showDropdown]);
+
 
     const searchHandler = ( isClick: boolean ) => {
         if(isClick)
             setPlaceholder("기업명, 키워드, 직무를 검색해보세요")
         else
             setPlaceholder("검색어를 입력하세요");
+
+        console.log(userId);
     }
 
     return (
@@ -45,36 +73,36 @@ const Navbar: React.FC<Props> = ({ userId, activeTab, setActiveTab, activeTabHan
                 <div className="navbar-logo" onClick={() => navigate('/')}>CareerFit</div>
                 <ul className={`navbar-links ${scrolled ? 'scrolled' : ''}`}>
                     <li>
-                        <a
-                            href="#"
+                        <a href="#"
                             className={scrolled && activeTab === 'Top100' ? 'scrolled-active' : ''}
                             onClick={(e) => {
                                 e.preventDefault();
                                 activeTabHandler(1);
+                                window.scrollTo({ top: 515, behavior: 'smooth' });
                             }}
                         >
                             Top100
                         </a>
                     </li>
                     <li>
-                        <a
-                            href="#"
+                        <a href="#"
                             className={scrolled && activeTab === 'Entry' ? 'scrolled-active' : ''}
                             onClick={(e) => {
                                 e.preventDefault();
                                 activeTabHandler(2);
+                                window.scrollTo({ top: 515, behavior: 'smooth' });
                             }}
                         >
                             신입
                         </a>
                     </li>
                     <li>
-                        <a
-                            href="#"
+                        <a href="#"
                             className={scrolled && activeTab === 'MyJob' ? 'scrolled-active' : ''}
                             onClick={(e) => {
                                 e.preventDefault();
                                 activeTabHandler(3);
+                                window.scrollTo({ top: 515, behavior: 'smooth' });
                             }}
                         >
                             나의 직무
@@ -90,7 +118,26 @@ const Navbar: React.FC<Props> = ({ userId, activeTab, setActiveTab, activeTabHan
                     </button>
                 </div>
                 {userId !== '' ? (
-                    <FontAwesomeIcon className="user-icon" icon={faCircleUser} />
+                    <div className="user-menu-wrapper" ref={dropdownRef}>
+                        <FontAwesomeIcon
+                            className="user-icon"
+                            icon={faCircleUser}
+                            onClick={() => setShowDropdown(prev => !prev)}
+                        />
+                        {showDropdown && (
+                            <div className="user-dropdown">
+                                <div className="user-id" onClick={() => navigate('/profile')}
+                                     style={{cursor: 'pointer'}}>
+                                    {userId}
+                                </div>
+                                <div className="logout" onClick={() => {
+                                    signout();
+                                }}>
+                                    로그아웃
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 ) : (
                     <div className="auth-links scrolled-auth-links">
                         <a href="/signin">로그인</a><span className="divider">|</span><a href="/agreement">회원가입</a>

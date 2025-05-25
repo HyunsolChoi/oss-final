@@ -1,6 +1,7 @@
-import React, {useState} from 'react';
-import {BrowserRouter, Routes, Route, useNavigate} from 'react-router-dom';
+import React, {useEffect, useState} from 'react';
+import { Routes, Route, useNavigate} from 'react-router-dom';
 import {toast, ToastContainer} from 'react-toastify';
+import { jwtDecode } from 'jwt-decode';
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
 import Home from './components/Home/Home';
@@ -10,6 +11,11 @@ import Signup from "./components/Signup/Signup";
 import Consulting from "./components/Consulting/Consulting";
 import Agreement from "./components/Signup/TermsAgreement"
 import Email from "./components/Signup/Email";
+
+interface JwtPayload {
+    userId: string;
+    exp: number;
+}
 
 function App() {
     const [activeTab, setActiveTab] = useState<'Top100' | 'Entry' | 'MyJob'>('Top100');
@@ -24,7 +30,7 @@ function App() {
         } else if (menu === 2) {
             newTab = 'Entry';
         } else {
-            if(userId===''){ // todo: 토큰으로 검사해야한다  (app)
+            if(userId===''){
                 toast.error('로그인 후 이용 가능합니다');
                 navigate('/signin');
                 return;
@@ -34,16 +40,47 @@ function App() {
         if (activeTab !== newTab) {
             setActiveTab(newTab);
         }
-        window.scrollTo({ top: 515, behavior: 'smooth' });
     };
+
+    const checkToken = () => {
+        const token = localStorage.getItem('token-careerfit');
+
+        if (token) {
+            try {
+                const decoded = jwtDecode<JwtPayload>(token);
+                const now = Date.now() / 1000;
+
+                if (decoded.exp > now) {
+                    // 토큰 유효 → 로그인 유지
+                    setUserId(decoded.userId);
+                    return true;
+                } else {
+                    // 토큰 만료
+                    setUserId('');
+                    localStorage.removeItem('token-careerfit');
+                    return false;
+                }
+            } catch (e) {
+                console.error('토큰 디코딩 실패', e);
+                setUserId('');
+                localStorage.removeItem('token-careerfit');
+                return false;
+            }
+        }
+    }
+
+    useEffect(() => {
+        checkToken();
+    }, []);
+
 
     return (
     <div>
-        <Navbar activeTab={activeTab} setActiveTab={setActiveTab} activeTabHandler={activeTabHandler} userId={''}/> {/*임의 아이디*/}
+        <Navbar activeTab={activeTab} setActiveTab={setActiveTab} activeTabHandler={activeTabHandler} userId={userId}/>
         <Routes>
             <Route
                 path="/"
-                element={<Home activeTab={activeTab} setActiveTab={setActiveTab} activeTabHandler={activeTabHandler} userId={''}/>}
+                element={<Home activeTab={activeTab} setActiveTab={setActiveTab} activeTabHandler={activeTabHandler} userId={userId}/>}
             />
             <Route
                 path="/signin"

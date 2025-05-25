@@ -85,8 +85,8 @@ async function insertData(dataArray) {
                     const employmentTypeId = employmentTypeRows[0]?.employment_type_id;
                     if (employmentTypeId) {
                         await connection.execute(
-                            'UPDATE job_postings SET employment_type_id = ? WHERE job_posting_id = ?',
-                            [employmentTypeId, jobPostingId]
+                            'INSERT IGNORE INTO job_posting_employment_types (job_posting_id, employment_type_id) VALUES (?, ?)',
+                            [jobPostingId, employmentTypeId]
                         );
                         await connection.execute('INSERT IGNORE INTO job_posting_employment_types (job_posting_id, employment_type_id) VALUES (?, ?)', [jobPostingId, employmentTypeId]);
                     }
@@ -116,13 +116,13 @@ async function insertData(dataArray) {
         // 고용형태 정보가 없는 공고에 대해서
         // 정보없음 이라는 고용형태를 할당함
         await connection.query(`
-            UPDATE job_postings
-            SET employment_type_id = (
-                SELECT employment_type_id 
-                FROM employment_types 
-                WHERE employment_type_name = '정보없음'
-            )
-            WHERE employment_type_id IS NULL;
+            INSERT IGNORE INTO job_posting_employment_types (job_posting_id, employment_type_id)
+            SELECT jp.job_posting_id, et.employment_type_id
+            FROM job_postings jp
+            JOIN employment_types et ON et.employment_type_name = '정보없음'
+            WHERE jp.job_posting_id NOT IN (
+                SELECT job_posting_id FROM job_posting_employment_types
+            );
         `);
 
         // 사용자 학력 정보 테이블 초기값 삽입

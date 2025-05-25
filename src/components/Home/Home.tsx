@@ -1,5 +1,5 @@
 // src/components/Home.tsx
-import React, { useState, useEffect, FC } from 'react';
+import React, { useState, useEffect } from 'react';
 import './Home.css';
 import { Job, getLatestJobs, getTop100Jobs, getEntryLevelJobs, getMyJobs } from '../../api/jobs'
 import {useNavigate} from "react-router-dom";
@@ -13,7 +13,7 @@ interface Props {
 
 const Home: React.FC<Props> = ({ userId, activeTab, setActiveTab, activeTabHandler }) => {
     const [recommendJobs, setLatestJobs] = useState<Job[]>([]);
-    const [topJobs,    setTopJobs]    = useState<Job[]>([]);
+    const [topJobs,  setTopJobs]    = useState<Job[]>([]);
     const [entryJobs,  setEntryJobs]  = useState<Job[]>([]);
     const [myJobs, setMyJobs] = useState<Job[]>([]);
 
@@ -55,20 +55,26 @@ const Home: React.FC<Props> = ({ userId, activeTab, setActiveTab, activeTabHandl
                 rel="noopener noreferrer"
                 className="rect-card"
             >
-                <div className="info">
-                    <div className="title">{job.title}</div>
-                    <div className="meta">
-                        <span>{job.company}</span>
-                        {job.experience && <span>{job.experience}</span>}
-                        {job.salary && <span>{job.salary}</span>}
+                <div className="card-content">
+                    <div className="info">
+                        <div className="title">{job.title}</div>
+                        <div className="meta">
+                            <span>{job.company}</span>
+                            {job.location && <div className="sectors">{job.location}</div>}
+                            {job.sectors && <div className="sectors">{job.sectors}</div>}
+                            {job.experience && <span>{job.experience}</span>}
+                        </div>
+                    </div>
+                    <div className="meta-right">
                         {job.views !== undefined && (
-                            <span>조회수 {job.views.toLocaleString()}회</span>
+                            <div className="views">조회수 {job.views.toLocaleString()}회</div>
                         )}
+                        <div className="deadline">{job.deadline}</div>
                     </div>
                 </div>
-                <div className="deadline">{job.deadline}</div>
             </a>
         ));
+
     };
 
 

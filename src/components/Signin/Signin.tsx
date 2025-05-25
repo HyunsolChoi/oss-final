@@ -1,8 +1,11 @@
 // src/components/Signin.tsx
-import React, {useState} from 'react'
+import React, {useEffect, useState} from 'react'
 import './Signin.css'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser, faLock } from '@fortawesome/free-solid-svg-icons';
+import {toast} from "react-toastify";
+import {useNavigate} from "react-router-dom";
+import { signin } from '../../api/auth'
 
 interface Props {
     userId: string;
@@ -12,48 +15,116 @@ interface Props {
 const Signin: React.FC<Props> = ({ userId, setUserId }) => {
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+    const [saveId, setSaveId] = useState(false);
+
+    const navigate = useNavigate();
+
+    const isValidUserId = (id: string): boolean => {
+        const regex = /^[a-zA-Z0-9]{6,20}$/;
+        return regex.test(id);
+    };
+
+    const isValidPwd = (pwd: string): boolean => {
+        const regex = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@])[a-zA-Z\d!@]{8,15}$/;
+        return regex.test(pwd);
+    };
+
+
+    const signHandler = async () => {
+        if (!userId || !password) {
+            toast.error('아이디와 비밀번호를 입력해주세요');
+            return;
+        }
+
+        if(!isValidUserId(userId) || !isValidPwd(password)) {
+            toast.error('유효하지 않은 아이디와 비밀번호 입니다.');
+            return;
+        }
+
+        signin(userId, password)
+            .then(result => {
+                if (result && result.token) {
+                    localStorage.setItem('token-careerfit', result.token);
+
+                    if (saveId) {
+                        localStorage.setItem('careerfit-id', userId);
+                    } else {
+                        localStorage.removeItem('careerfit-id');
+                    }
+
+                    toast.success('로그인 성공!');
+                    navigate('/');
+                }
+
+            })
+            .catch(() => {
+                toast.error('로그인 중 문제가 발생했습니다.');
+            });
+
+
+    };
+
+    useEffect(() => {
+        const savedId = localStorage.getItem('careerfit-id');
+        if (savedId) {
+            setUserId(savedId);
+            setSaveId(true);
+        }
+    }, [setUserId]);
 
     return (
         <div className="login-wrapper">
             <h2>로그인</h2>
-            <div className="input-group">
-                <FontAwesomeIcon icon={faUser} className="input-icon" />
-                <input
-                    type="text"
-                    placeholder="아이디"
-                    value={userId}
-                    onChange={(e) => setUserId(e.target.value)}
-                />
-            </div>
+            <form
+                onSubmit={(e) => {
+                    e.preventDefault(); // 기본 폼 제출 방지
+                    signHandler(); // 로그인 실행
+                }}
+            >
+                <div className="input-group">
+                    <FontAwesomeIcon icon={faUser} className="input-icon" />
+                    <input
+                        type="text"
+                        placeholder="아이디"
+                        value={userId}
+                        onChange={(e) => setUserId(e.target.value)}
+                    />
+                </div>
 
-            <div className="input-group">
-                <FontAwesomeIcon icon={faLock} className="input-icon" />
-                <input
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="비밀번호"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                />
-                <span className="show-toggle" onClick={() => setShowPassword(!showPassword)}>
+                <div className="input-group">
+                    <FontAwesomeIcon icon={faLock} className="input-icon" />
+                    <input
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="비밀번호"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                    />
+                    <span className="show-toggle" onClick={() => setShowPassword(!showPassword)}>
           비밀번호 표시
         </span>
-            </div>
+                </div>
 
-            <div className="options">
-                <label>
-                    <input type="checkbox" /> 아이디 저장
-                </label>
-            </div>
+                <div className="options">
+                    <label>
+                        <input
+                            type="checkbox"
+                            checked={saveId}
+                            onChange={(e) => setSaveId(e.target.checked)}
+                        />{' '}
+                        아이디 저장
+                    </label>
+                </div>
 
-            <button className="login-button">로그인</button>
+                <button type="submit" className="login-button">로그인</button>
 
-            <div className="link-row">
-                <a href="#">아이디 찾기</a>
-                <span>|</span>
-                <a href="#">비밀번호 재설정</a>
-                <span>|</span>
-                <a href="/agreement">회원가입</a>
-            </div>
+                <div className="link-row">
+                    <a href="#">아이디 찾기</a>
+                    <span>|</span>
+                    <a href="#">비밀번호 재설정</a>
+                    <span>|</span>
+                    <a href="/agreement">회원가입</a>
+                </div>
+            </form>
         </div>
     );
 }

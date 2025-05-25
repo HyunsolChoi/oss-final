@@ -10,7 +10,6 @@ const Signup: React.FC = () => {
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [confirmPassword, setConfirmPassword] = useState('');
-    const [showConfirm, setShowConfirm] = useState(false);
     const [education, setEducation] = useState('');
     const [region, setRegion] = useState('');
     const [showNext, setShowNext ] = useState(false);

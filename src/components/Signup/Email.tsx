@@ -1,6 +1,6 @@
 // src/components/Email.tsx
 import React, {useEffect, useState} from 'react';
-import { requestEmailAuth, verifyEmailAuth } from '../../api/jobs';
+import { requestEmailAuth, verifyEmailAuth } from '../../api/auth';
 import { toast } from 'react-toastify';
 import './Email.css';
 import './Signup.css';
