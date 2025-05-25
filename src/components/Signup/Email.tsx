@@ -1,6 +1,6 @@
 // src/components/Email.tsx
 import React, {useEffect, useState} from 'react';
-import { requestEmailAuth, verifyEmailAuth } from '../../api/auth';
+import { requestEmailAuth, verifyEmailAuth, checkEmailDuplicate } from '../../api/auth';
 import { toast } from 'react-toastify';
 import './Email.css';
 import './Signup.css';
@@ -21,7 +21,6 @@ const Email: React.FC = () => {
     useEffect(() => {
         let interval: NodeJS.Timeout;
         if (codeSent && !isVerified) {
-            setTimeLeft(180);
             interval = setInterval(() => {
                 setTimeLeft(prev => {
                     if (prev <= 1) {
@@ -62,14 +61,21 @@ const Email: React.FC = () => {
 
         // todo: 이메일 중복 검사 해야함
 
-        setIsSending(true);
-        setCodeSent(true);
-
         try {
+            const isAvailable = await checkEmailDuplicate(email);
+            if (!isAvailable) {
+                toast.error('이미 가입된 이메일입니다');
+                return;
+            }
+
+            setIsSending(true);
+            setCodeSent(true);
+            setTimeLeft(180);
+
             await requestEmailAuth(email); // 실제 메일 보내는 함수
         } catch (err: any) {
             console.error(err);
-            toast.error(err.message);
+            toast.error("유효하지 않은 이메일입니다");
             setCodeSent(false);
         } finally {
             setIsSending(false);           // 전송 중 상태 끝

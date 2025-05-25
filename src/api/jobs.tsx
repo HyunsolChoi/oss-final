@@ -16,7 +16,7 @@ export interface Job {
 async function request<T>(path: string): Promise<T> {
     const res = await fetch(path)
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    return res.json() as Promise<T>
+    return await res.json() as Promise<T>
 }
 
 export function getLatestJobs(): Promise<Job[]> {

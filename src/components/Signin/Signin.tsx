@@ -6,6 +6,7 @@ import { faUser, faLock } from '@fortawesome/free-solid-svg-icons';
 import {toast} from "react-toastify";
 import {useNavigate} from "react-router-dom";
 import { signin } from '../../api/auth'
+import Footer from "../utils/Footer/Footer";
 
 interface Props {
     userId: string;
@@ -37,13 +38,13 @@ const Signin: React.FC<Props> = ({ userId, setUserId }) => {
         }
 
         if(!isValidUserId(userId) || !isValidPwd(password)) {
-            toast.error('유효하지 않은 아이디와 비밀번호 입니다.');
+            toast.error('유효하지 않은 아이디와 비밀번호 입니다');
             return;
         }
 
         signin(userId, password)
             .then(result => {
-                if (result && result.token) {
+                if (result && 'token' in result) {
                     localStorage.setItem('token-careerfit', result.token);
 
                     if (saveId) {
@@ -54,14 +55,15 @@ const Signin: React.FC<Props> = ({ userId, setUserId }) => {
 
                     toast.success('로그인 성공!');
                     navigate('/');
+                } else if (result && 'message' in result) {
+                    toast.error(result.message);
+                } else {
+                    toast.error('로그인 실패');
                 }
-
             })
             .catch(() => {
-                toast.error('로그인 중 문제가 발생했습니다.');
+                toast.error('로그인 중 문제가 발생했습니다');
             });
-
-
     };
 
     useEffect(() => {
@@ -73,58 +75,61 @@ const Signin: React.FC<Props> = ({ userId, setUserId }) => {
     }, [setUserId]);
 
     return (
-        <div className="login-wrapper">
-            <h2>로그인</h2>
-            <form
-                onSubmit={(e) => {
-                    e.preventDefault(); // 기본 폼 제출 방지
-                    signHandler(); // 로그인 실행
-                }}
-            >
-                <div className="input-group">
-                    <FontAwesomeIcon icon={faUser} className="input-icon" />
-                    <input
-                        type="text"
-                        placeholder="아이디"
-                        value={userId}
-                        onChange={(e) => setUserId(e.target.value)}
-                    />
-                </div>
-
-                <div className="input-group">
-                    <FontAwesomeIcon icon={faLock} className="input-icon" />
-                    <input
-                        type={showPassword ? 'text' : 'password'}
-                        placeholder="비밀번호"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                    />
-                    <span className="show-toggle" onClick={() => setShowPassword(!showPassword)}>
-          비밀번호 표시
-        </span>
-                </div>
-
-                <div className="options">
-                    <label>
+        <div className="wrapper-footer">
+            <div className="login-wrapper">
+                <h2>로그인</h2>
+                <form
+                    onSubmit={(e) => {
+                        e.preventDefault(); // 기본 폼 제출 방지
+                        signHandler(); // 로그인 실행
+                    }}
+                >
+                    <div className="input-group">
+                        <FontAwesomeIcon icon={faUser} className="input-icon" />
                         <input
-                            type="checkbox"
-                            checked={saveId}
-                            onChange={(e) => setSaveId(e.target.checked)}
-                        />{' '}
-                        아이디 저장
-                    </label>
-                </div>
+                            type="text"
+                            placeholder="아이디"
+                            value={userId}
+                            onChange={(e) => setUserId(e.target.value)}
+                        />
+                    </div>
 
-                <button type="submit" className="login-button">로그인</button>
+                    <div className="input-group">
+                        <FontAwesomeIcon icon={faLock} className="input-icon" />
+                        <input
+                            type={showPassword ? 'text' : 'password'}
+                            placeholder="비밀번호"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                        />
+                        <span className="show-toggle" onClick={() => setShowPassword(!showPassword)}>
+                          비밀번호 표시
+                        </span>
+                    </div>
 
-                <div className="link-row">
-                    <a href="#">아이디 찾기</a>
-                    <span>|</span>
-                    <a href="#">비밀번호 재설정</a>
-                    <span>|</span>
-                    <a href="/agreement">회원가입</a>
-                </div>
-            </form>
+                    <div className="options">
+                        <label>
+                            <input
+                                type="checkbox"
+                                checked={saveId}
+                                onChange={(e) => setSaveId(e.target.checked)}
+                            />{' '}
+                            아이디 저장
+                        </label>
+                    </div>
+
+                    <button type="submit" className="login-button">로그인</button>
+
+                    <div className="link-row">
+                        <a href="#">아이디 찾기</a>
+                        <span>|</span>
+                        <a href="#">비밀번호 재설정</a>
+                        <span>|</span>
+                        <a href="/agreement">회원가입</a>
+                    </div>
+                </form>
+            </div>
+            <Footer/>
         </div>
     );
 }

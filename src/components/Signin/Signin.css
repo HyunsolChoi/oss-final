@@ -1,9 +1,16 @@
+.wrapper-footer {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
 .login-wrapper {
     width: 400px;
     margin: 0 auto;
     padding: 130px 0;
     font-family: sans-serif;
     text-align: center;
+    flex: 1;
 }
 
 .input-group {

@@ -3,22 +3,24 @@ import React, { useState, useEffect } from 'react';
 import './Home.css';
 import { Job, getLatestJobs, getTop100Jobs, getEntryLevelJobs, getMyJobs } from '../../api/jobs'
 import {useNavigate} from "react-router-dom";
+import Footer from "../utils/Footer/Footer";
 
 interface Props {
     userId: string;
     activeTab: 'Top100' | 'Entry' | 'MyJob';
-    setActiveTab: (tab: 'Top100' | 'Entry' | 'MyJob') => void;
     activeTabHandler: (menu: 1 | 2 | 3) => void;
 }
 
-const Home: React.FC<Props> = ({ userId, activeTab, setActiveTab, activeTabHandler }) => {
+const Home: React.FC<Props> = ({ userId, activeTab, activeTabHandler }) => {
     const [recommendJobs, setLatestJobs] = useState<Job[]>([]);
     const [topJobs,  setTopJobs]    = useState<Job[]>([]);
     const [entryJobs,  setEntryJobs]  = useState<Job[]>([]);
     const [myJobs, setMyJobs] = useState<Job[]>([]);
+    const [visibleCount, setVisibleCount] = useState(50);
 
-    //const [showJobs, setShowJobs] = useState<Job[]>([]); // 실제로 화면에 나오는 공고 ( Top100, Entry )
     const navigate = useNavigate();
+    const loadMoreRef = React.useRef<HTMLDivElement | null>(null);
+
 
     const renderCurrentJobs = (
         activeTab: 'Top100' | 'Entry' | 'MyJob',
@@ -32,6 +34,8 @@ const Home: React.FC<Props> = ({ userId, activeTab, setActiveTab, activeTabHandl
                 : activeTab === 'Entry'
                     ? entryJobs
                     : myJobs;
+
+        const jobsToRender = currentJobs.slice(0, visibleCount);
 
         if (currentJobs.length === 0) {
             return (
@@ -47,36 +51,43 @@ const Home: React.FC<Props> = ({ userId, activeTab, setActiveTab, activeTabHandl
             );
         }
 
-        return currentJobs.map(job => (
-            <a
-                key={job.id}
-                href={job.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="rect-card"
-            >
-                <div className="card-content">
-                    <div className="info">
-                        <div className="title">{job.title}</div>
-                        <div className="meta">
-                            <span>{job.company}</span>
-                            {job.location && <div className="sectors">{job.location}</div>}
-                            {job.sectors && <div className="sectors">{job.sectors}</div>}
-                            {job.experience && <span>{job.experience}</span>}
+        return (
+            <>
+                {jobsToRender.map(job => (
+                    <a
+                        key={job.id}
+                        href={job.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="rect-card"
+                    >
+                        <div className="card-content">
+                            <div className="info">
+                                <div className="title">{job.title}</div>
+                                <div className="meta">
+                                    <span>{job.company}</span>
+                                    {job.location && <div className="sectors">{job.location}</div>}
+                                    {job.sectors && <div className="sectors">{job.sectors}</div>}
+                                    {job.experience && <span>{job.experience}</span>}
+                                </div>
+                            </div>
+                            <div className="meta-right">
+                                {job.views !== undefined && (
+                                    <div className="views">조회수 {job.views.toLocaleString()}회</div>
+                                )}
+                                <div className="deadline">{job.deadline}</div>
+                            </div>
                         </div>
-                    </div>
-                    <div className="meta-right">
-                        {job.views !== undefined && (
-                            <div className="views">조회수 {job.views.toLocaleString()}회</div>
-                        )}
-                        <div className="deadline">{job.deadline}</div>
-                    </div>
-                </div>
-            </a>
-        ));
-
+                    </a>
+                ))}
+                <div ref={loadMoreRef} style={{height: '1px'}}/>
+            </>
+        );
     };
 
+    useEffect(() => {
+        setVisibleCount(50);
+    }, [activeTab]);
 
     useEffect(() => {
         getLatestJobs()
@@ -90,11 +101,38 @@ const Home: React.FC<Props> = ({ userId, activeTab, setActiveTab, activeTabHandl
         getEntryLevelJobs()
             .then(setEntryJobs)
             .catch(console.error)
-
     }, [])
 
+    // 스크롤 최하위로 하면 공고 추가 렌더링을 위한,,,
     useEffect(() => {
-        if(userId !== ''){ // todo: 토큰으로 검사해야한다  (app)
+        const observer = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting) {
+                const currentJobs =
+                    activeTab === 'Top100'
+                        ? topJobs
+                        : activeTab === 'Entry'
+                            ? entryJobs
+                            : myJobs;
+
+                if (visibleCount < currentJobs.length) {
+                    setVisibleCount((prev) => prev + 50);
+                }
+            }
+        });
+
+        const currentTarget = loadMoreRef.current;
+        if (currentTarget) {
+            observer.observe(currentTarget);
+        }
+
+        return () => {
+            if (currentTarget) observer.unobserve(currentTarget);
+            observer.disconnect();
+        };
+    }, [visibleCount, activeTab, topJobs, entryJobs, myJobs]);
+
+    useEffect(() => {
+        if(userId !== ''){ // 토큰검사는 app.tsx 에서 하고 userId를 하위 컴포넌트로 뿌림
             getMyJobs(userId)
                 .then(setMyJobs)
                 .catch(console.error)
@@ -148,7 +186,7 @@ const Home: React.FC<Props> = ({ userId, activeTab, setActiveTab, activeTabHandl
                             신입
                         </button>
                         <button
-                            className={`tab ${activeTab === 'MyJob' ? 'active' : ''}`}
+                            className={`tab ${activeTab === 'MyJob' ? 'active' : ''} ${userId === '' ? 'disabled-tab' : ''}`}
                             onClick={() => activeTabHandler(3)}
                         >
                             나의 직무
@@ -163,6 +201,7 @@ const Home: React.FC<Props> = ({ userId, activeTab, setActiveTab, activeTabHandl
                     </div>
                 </section>
             </div>
+            <Footer />
         </div>
     );
 };

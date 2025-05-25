@@ -5,12 +5,13 @@ import { jwtDecode } from 'jwt-decode';
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
 import Home from './components/Home/Home';
-import Navbar from './components/Navbar/Navbar';
+import Navbar from './components/utils/Navbar/Navbar';
 import Signin from "./components/Signin/Signin";
 import Signup from "./components/Signup/Signup";
 import Consulting from "./components/Consulting/Consulting";
 import Agreement from "./components/Signup/TermsAgreement"
 import Email from "./components/Signup/Email";
+import Profile from "./components/Profile/Profile";
 
 interface JwtPayload {
     userId: string;
@@ -76,11 +77,11 @@ function App() {
 
     return (
     <div>
-        <Navbar activeTab={activeTab} setActiveTab={setActiveTab} activeTabHandler={activeTabHandler} userId={userId}/>
+        <Navbar activeTab={activeTab} activeTabHandler={activeTabHandler} userId={userId}/>
         <Routes>
             <Route
                 path="/"
-                element={<Home activeTab={activeTab} setActiveTab={setActiveTab} activeTabHandler={activeTabHandler} userId={userId}/>}
+                element={<Home activeTab={activeTab} activeTabHandler={activeTabHandler} userId={userId}/>}
             />
             <Route
                 path="/signin"
@@ -100,8 +101,12 @@ function App() {
             </Route>
             <Route
                 path="/consulting"
-                element={<Consulting/>} // token 넘겨줘서 유효성 판단 후 진입 가능하도록 해야함
-            ></Route>
+                element={<Consulting/>}> // token 넘겨줘서 유효성 판단 후 진입 가능하도록 해야함
+            </Route>
+            <Route
+                path="/profile"
+                element={<Profile userId={userId}/>}>
+            </Route>
         </Routes>
         <ToastContainer
             position="top-center"

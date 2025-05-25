@@ -82,7 +82,6 @@ exports.getEntryLevelJobs = async (req, res) => {
     WHERE e.experience_id = 1
     GROUP BY j.job_posting_id
     ORDER BY j.created_at DESC
-    LIMIT 100
     `;
 
     try {
@@ -149,7 +148,6 @@ exports.getMyJobs = async (req, res) => {
             WHERE jps.sector_id IN (${sectorIds.map(() => '?').join(', ')})
             GROUP BY j.job_posting_id
             ORDER BY j.created_at DESC
-            LIMIT 100
         `;
 
 

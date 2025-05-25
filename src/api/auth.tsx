@@ -1,7 +1,7 @@
 export async function signin(
     userId: string,
     password: string
-): Promise<{ token: string } | false> {
+): Promise<{ token: string } | { success: false; message: string }> {
     try {
         const response = await fetch('/api/auth/signin', {
             method: 'POST',
@@ -11,23 +11,22 @@ export async function signin(
             body: JSON.stringify({ userId, password })
         });
 
-        if (!response.ok) {
-            console.error('서버 응답 오류:', response.status);
-            return false;
-        }
-
         const result = await response.json();
+
+        if (!response.ok) {
+            return { success: false, message: result.message || '서버 오류' };
+        }
 
         if (result.success && result.token) {
             return { token: result.token };
         }
 
-        return false;
+        return { success: false, message: result.message || '로그인 실패' };
     } catch (error) {
-        console.error('로그인 요청 실패:', error);
-        return false;
+        return { success: false, message: '요청 실패' };
     }
 }
+
 
 export async function signout(userId: string): Promise<boolean> {
     try {
@@ -71,5 +70,47 @@ export async function verifyEmailAuth(email: string, code: string): Promise<void
     if (!res.ok) {
         const {message} = await res.json()
         throw new Error(message || '인증 실패')
+    }
+}
+
+// 이메일 중복 검사
+export async function checkEmailDuplicate(email: string): Promise<boolean> {
+    const res = await fetch('/api/auth/check-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+    });
+
+    if (!res.ok) {
+        const { message } = await res.json();
+        throw new Error(message || '이메일 중복 검사 실패');
+    }
+
+    const data = await res.json();
+    return data.duplicate === false; // 중복되지 않은 경우만 true 반환
+}
+
+// 비밀번호 변경
+export async function changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string
+): Promise<{ success: boolean; message?: string }> {
+    try {
+        const res = await fetch('/api/auth/change-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, currentPassword, newPassword }),
+        });
+
+        const result = await res.json();
+
+        return {
+            success: result.success ?? false,
+            message: result.message,
+        };
+    } catch (error) {
+        console.error('비밀번호 변경 요청 에러:', error);
+        return { success: false, message: '서버와의 통신 중 오류 발생' };
     }
 }
