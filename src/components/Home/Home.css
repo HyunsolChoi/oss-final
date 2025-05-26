@@ -3,16 +3,20 @@
     font-family: sans-serif;
     justify-content: center;
     z-index: 1;
+
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
 }
 
 .home-children {
-    position: absolute;
-    height: 100%;
+    position: relative;
     width: 1250px;
     padding: 90px 130px 0 130px;
     left: 50%;
     transform: translateX(-50%);
     top: 0;
+    flex: 1;
 }
 
 .section-recommend h2 {
@@ -118,6 +122,10 @@
     color: #2563eb;
 }
 
+.disabled-tab {
+    color: #ccc !important;
+}
+
 .list-and-graphic {
     display: flex;
 }
@@ -165,10 +173,23 @@
     gap: 12px;
 }
 
-.rect-card .deadline {
+.card-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    width: 100%;
+}
+
+.meta-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    min-height: 48px;
     font-size: 0.8rem;
-    color: #475569; /* 약간 진한 블루그레이 */
-    margin-left: 16px;
+    color: #64748b;
+    white-space: nowrap;
+    gap: 4px;
 }
 
 .graphic {
@@ -176,9 +197,10 @@
     background-color: #2563eb; /* 강조 블루 */
     margin-left: 16px;
     border-radius: 4px;
-    color: #f8fafc; /* 거의 흰색에 가까운 밝은 톤 */
+    color: #f8fafc;
     display: flex;
     justify-content: center;
     align-items: center;
     font-size: 1.2rem;
 }
+

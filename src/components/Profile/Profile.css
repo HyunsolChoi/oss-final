@@ -1,0 +1,120 @@
+.wrapper-footer {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.show-toggle-2 {
+    position: absolute;
+    right: 12px;
+    top: 53%;
+    transform: translateY(-50%);
+    font-size: 13px;
+    color: #475569;
+    cursor: pointer;
+}
+
+.profile-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    width: 100%;
+    max-width: 1000px; /* 중앙에 고정된 폭 */
+    margin: 0 auto;
+    padding: 130px 0 60px;
+    flex: 1;
+    gap: 24px;
+}
+
+.profile-sidebar {
+    width: 200px;
+    background-color: #f1f5f9;
+    padding: 20px;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.profile-sidebar button {
+    padding: 10px;
+    border: none;
+    background: none;
+    text-align: left;
+    font-size: 1rem;
+    color: #334155;
+    cursor: pointer;
+    border-left: 4px solid transparent;
+    transition: 0.2s;
+}
+
+.profile-sidebar button.active {
+    color: #2563eb;
+    font-weight: bold;
+    border-left: 4px solid #2563eb;
+    background-color: #e2e8f0;
+}
+
+.profile-main {
+    flex: 1;
+    padding: 30px;
+    background-color: white;
+}
+
+.profile-content h2 {
+    color: #1e293b;
+    margin-bottom: 10px;
+}
+
+/* 비밀번호 변경 파트 */
+.password-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 400px;
+    width: 100%;
+}
+
+.password-form label {
+    display: flex;
+    flex-direction: column;
+    font-weight: 500;
+    color: #1e293b;
+    font-size: 0.95rem;
+}
+
+.password-form input {
+    margin-top: 6px;
+    padding: 10px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    font-size: 14px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.password-form button {
+    margin-top: 16px;
+    padding: 12px;
+    background-color: #6366f1;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 15px;
+}
+
+.password-form button:hover {
+    background-color: #4f46e5;
+}
+
+.password-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    position: relative;
+}
+
+
+/* 사용자 입력 정보 수정 파트 */

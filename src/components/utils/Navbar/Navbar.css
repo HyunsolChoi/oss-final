@@ -217,8 +217,13 @@ ul.navbar-links li a:hover {
 .user-dropdown .user-id {
     font-weight: 600;
     margin-bottom: 10px;
+    cursor: pointer;
     color: #1e293b;
     font-size: 14px;
+}
+
+.user-dropdown .user-id:hover {
+    text-decoration: underline;
 }
 
 .user-dropdown .logout {

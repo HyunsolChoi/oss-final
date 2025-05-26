@@ -73,20 +73,20 @@ async function createTables() {
 
             // 8. 채용 정보 테이블
             `CREATE TABLE IF NOT EXISTS job_postings (
-                 job_posting_id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                 company_id BIGINT NOT NULL,
-                 title TEXT NOT NULL,
-                 link TEXT NOT NULL,
-                 link_hash CHAR(64) NOT NULL UNIQUE,
-                 education_id BIGINT,
-                 deadline VARCHAR(20),
-                 views INT DEFAULT 0,
-                 salary VARCHAR(64) DEFAULT '추후 협의',
-                 last_modified_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                 FOREIGN KEY (company_id) REFERENCES companies(company_id),
-                 FOREIGN KEY (education_id) REFERENCES educations(education_id)
-             );`,
+                job_posting_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                company_id BIGINT NOT NULL,                
+                title TEXT NOT NULL,
+                link TEXT NOT NULL,
+                link_hash CHAR(64) NOT NULL UNIQUE,
+                education_id BIGINT,
+                deadline VARCHAR(20),
+                views INT DEFAULT 0,
+                salary VARCHAR(64) DEFAULT '추후 협의',
+                last_modified_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (company_id) REFERENCES companies(company_id),
+                FOREIGN KEY (education_id) REFERENCES educations(education_id)
+            );`,
 
             // 9. 채용-경력 매핑 테이블
             `CREATE TABLE IF NOT EXISTS job_posting_experiences (
@@ -125,12 +125,11 @@ async function createTables() {
             );`,
 
             // 13. 유저 토큰 테이블
-            `CREATE TABLE IF NOT EXISTS user_tokens (
-                token_id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                user_id CHAR(30) NOT NULL,
-                refresh_token VARCHAR(255) NOT NULL UNIQUE,
-                expires_at DATETIME NOT NULL,
-                FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+            `CREATE TABLE user_tokens (
+              user_id CHAR(30) PRIMARY KEY,
+              refresh_token VARCHAR(512) NOT NULL UNIQUE,
+              expires_at DATETIME NOT NULL,
+              FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
             );`,
 
             // 14. 로그인 이력 테이블
@@ -175,20 +174,21 @@ async function createTables() {
                 user_id CHAR(30) NOT NULL,
                 job_posting_id BIGINT NOT NULL,
                 requested_at DATETIME NOT NULL,
+                gpt_input JSON NOT NULL,
                 gpt_output JSON NOT NULL,
                 FOREIGN KEY (user_id) REFERENCES users(user_id),
                 FOREIGN KEY (job_posting_id) REFERENCES job_postings(job_posting_id)
             );`,
 
-             // 16. 북마크 정보 저장 테이블
-             `CREATE TABLE IF NOT EXISTS bookmarks (
-                 user_id CHAR(30) NOT NULL,
-                 job_posting_id BIGINT NOT NULL,
-                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                 PRIMARY KEY (user_id, job_posting_id),
-                 FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
-                 FOREIGN KEY (job_posting_id) REFERENCES job_postings(job_posting_id) ON DELETE CASCADE
-             );`
+            // // 16. 북마크 정보 저장 테이블
+            // `CREATE TABLE IF NOT EXISTS bookmarks (
+            //     user_id CHAR(30) NOT NULL,
+            //     job_posting_id BIGINT NOT NULL,
+            //     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            //     PRIMARY KEY (user_id, job_posting_id),
+            //     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+            //     FOREIGN KEY (job_posting_id) REFERENCES job_postings(job_posting_id) ON DELETE CASCADE
+            // );`
         ];
 
         let cntErr = 0;
@@ -212,11 +212,11 @@ async function createTables() {
               FOR EACH ROW
               BEGIN
                 DECLARE count_refs INT;
-            
+
                 SELECT COUNT(*) INTO count_refs
                 FROM user_skills
                 WHERE skill_id = OLD.skill_id;
-            
+
                 IF count_refs = 0 THEN
                   DELETE FROM skills WHERE skill_id = OLD.skill_id;
                 END IF;
@@ -230,7 +230,7 @@ async function createTables() {
 
         try{
             if(cntErr === 0) {
-                await connection.query(`INSERT INTO users (user_id, email, password, sector) VALUES ('admin123','admin@example.com', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', '백엔드');`)
+                await connection.query(`INSERT INTO users (user_id, email, password, sector) VALUES ('admin123','admin@example.com', '5751a44782594819e4cb8aa27c2c9d87a420af82bc6a5a05bc7f19c3bb00452b', '백엔드');`)
                 console.error("관리자 계정 생성 완료");
             }
         } catch (error) {

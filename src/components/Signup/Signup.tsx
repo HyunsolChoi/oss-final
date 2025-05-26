@@ -10,7 +10,6 @@ const Signup: React.FC = () => {
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [confirmPassword, setConfirmPassword] = useState('');
-    const [showConfirm, setShowConfirm] = useState(false);
     const [education, setEducation] = useState('');
     const [region, setRegion] = useState('');
     const [showNext, setShowNext ] = useState(false);
@@ -53,11 +52,11 @@ const Signup: React.FC = () => {
 
     const signupComplete = () => {
         if(!isValidUserId(userId) || !isValidPwd(password) || userId===password){
-            toast.error("유효하지 않은 아이디와 비밀번호 입니다.")
+            toast.error("유효하지 않은 아이디와 비밀번호 입니다")
             return;
         }
         if (hasDuplicateSkills(skills)) {
-            toast.error("기술 항목에 중복된 값이 있습니다.");
+            toast.error("기술 항목에 중복된 값이 있습니다");
             return;
         }
 
@@ -72,17 +71,26 @@ const Signup: React.FC = () => {
             .map(cookie => cookie.trim());
 
         const hasAgreement = cookies.some(cookie =>
-            cookie.startsWith('agreementAccepted=')
+            cookie.startsWith('careerfit_agreementAccepted=')
         );
         const hasEmailVerified = cookies.some(cookie =>
-            cookie.startsWith('emailVerified=')
+            cookie.startsWith('careerfit_emailVerified=')
         );
+
+        if(!hasAgreement){
+            toast.error("동의 페이지 쿠키 에러")
+        }
+
+        if(!hasEmailVerified){
+            toast.error("이메일 페이지 쿠키 에러")
+        }
 
         if (!hasAgreement || !hasEmailVerified) {
             // 약관 동의가 없으면 동의 페이지로
             toast.error("세션이 만료되어 동의 페이지로 이동합니다")
             navigate('/agreement');
         }
+
     }, []);
 
 
@@ -113,10 +121,9 @@ const Signup: React.FC = () => {
                         />
                         <span
                             className="show-toggle"
-                            onClick={() => setShowPassword(!showPassword)}
-                        >
+                            onClick={() => setShowPassword(!showPassword)}>
                             비밀번호 표시
-                          </span>
+                        </span>
                     </div>
 
                     <div className="input-group">
@@ -133,19 +140,19 @@ const Signup: React.FC = () => {
                         className="signup-button"
                         onClick={() => {
                             if (!userId || !password || !confirmPassword) {
-                                toast.error("모든 항목을 입력해주세요.");
+                                toast.error("모든 항목을 입력해주세요");
                                 return;
                             }
                             if (!isValidUserId(userId)) {
-                                toast.error("아이디는 영문자 및 숫자 6~20자여야 합니다.");
+                                toast.error("아이디는 영문자 및 숫자 6~20자여야 합니다");
                                 return;
                             }
                             if (!isValidPwd(password)) {
-                                toast.error("비밀번호는 영문자, 숫자 및 특수문자(!, @) 8~15자여야 합니다.");
+                                toast.error("비밀번호는 영문자, 숫자 및 특수문자(!, @) 8~15자여야 합니다");
                                 return;
                             }
                             if(userId === password){
-                                toast.error("아이디와 비밀번호는 같을 수 없습니다.");
+                                toast.error("아이디와 비밀번호는 같을 수 없습니다");
                                 return;
                             }
                             setShowNext(true);

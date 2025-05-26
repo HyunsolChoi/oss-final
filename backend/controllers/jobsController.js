@@ -30,15 +30,22 @@ exports.getLatestJobs = async (req, res) => {
  */
 exports.getTop100Jobs = async (req, res) => {
     const query = `
-    SELECT
+        SELECT
       j.job_posting_id AS id,
       c.company_name AS company,
       j.title,
       j.link,
       j.views,
+      GROUP_CONCAT(DISTINCT s.sector_name SEPARATOR ', ') AS sectors,
+      GROUP_CONCAT(DISTINCT l.location_name SEPARATOR ', ') AS location,
       j.deadline
     FROM job_postings j
     JOIN companies c ON j.company_id = c.company_id
+    LEFT JOIN job_posting_sectors jps ON j.job_posting_id = jps.job_posting_id
+    LEFT JOIN sectors s ON jps.sector_id = s.sector_id
+    LEFT JOIN job_posting_locations jpl ON j.job_posting_id = jpl.job_posting_id
+    LEFT JOIN locations l ON jpl.location_id = l.location_id
+    GROUP BY j.job_posting_id
     ORDER BY j.views DESC
     LIMIT 100
   `;
@@ -51,25 +58,30 @@ exports.getTop100Jobs = async (req, res) => {
 };
 
 /**
- * 신입/인턴 필터
+ * 신입 필터
  */
 exports.getEntryLevelJobs = async (req, res) => {
     const query = `
-      SELECT
-        j.job_posting_id AS id,
-        c.company_name      AS company,
-        j.title,
-        j.link,
-        j.views,
-        e.experience_level  AS experience,
-        j.deadline
-      FROM job_postings j
-      JOIN companies c ON j.company_id = c.company_id
-      JOIN job_posting_experiences jpe ON j.job_posting_id = jpe.job_posting_id
-      JOIN experiences e    ON jpe.experience_id = e.experience_id
-      WHERE e.experience_id = 1
-      ORDER BY j.created_at DESC
-      LIMIT 100
+          SELECT
+      j.job_posting_id AS id,
+      c.company_name AS company,
+      j.title,
+      j.link,
+      e.experience_level AS experience,
+      GROUP_CONCAT(DISTINCT s.sector_name SEPARATOR ', ') AS sectors,
+      GROUP_CONCAT(DISTINCT l.location_name SEPARATOR ', ') AS location,
+      j.deadline
+    FROM job_postings j
+    JOIN companies c ON j.company_id = c.company_id
+    JOIN job_posting_experiences jpe ON j.job_posting_id = jpe.job_posting_id
+    JOIN experiences e ON jpe.experience_id = e.experience_id
+    LEFT JOIN job_posting_sectors jps ON j.job_posting_id = jps.job_posting_id
+    LEFT JOIN sectors s ON jps.sector_id = s.sector_id
+    LEFT JOIN job_posting_locations jpl ON j.job_posting_id = jpl.job_posting_id
+    LEFT JOIN locations l ON jpl.location_id = l.location_id
+    WHERE e.experience_id = 1
+    GROUP BY j.job_posting_id
+    ORDER BY j.created_at DESC
     `;
 
     try {
@@ -79,7 +91,9 @@ exports.getEntryLevelJobs = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
-
+/**
+* 사용자 직무 관련 공고
+*/
 exports.getMyJobs = async (req, res) => {
     const { userId } = req.body;
     if (!userId) {
@@ -87,9 +101,8 @@ exports.getMyJobs = async (req, res) => {
     }
 
     try {
-        // 1. 사용자 역할(role) 조회
         const [[user]] = await executeQuery(
-            `SELECT role FROM users WHERE user_id = ?`,
+            `SELECT sector FROM users WHERE user_id = ?`,
             [userId]
         );
 
@@ -97,35 +110,51 @@ exports.getMyJobs = async (req, res) => {
             return res.status(404).json({ message: '사용자를 찾을 수 없습니다.' });
         }
 
-        const roleKeywords = user.role.split(' ').map(k => k.trim()).filter(k => k);
-        if (roleKeywords.length === 0) {
-            return res.status(200).json([]); // 역할이 없으면 공고도 없음
+        const keyword = `%${user.sector}%`;
+
+        const [sectorRows] = await executeQuery(
+            `SELECT sector_id FROM sectors WHERE sector_name LIKE ?`,
+            [keyword]
+        );
+
+        // 매칭된 분야 없음
+        if (sectorRows.length === 0) {
+            return res.status(200).json([]);
         }
 
-        // 2. 역할 키워드 기반으로 공고 검색
-        const conditions = roleKeywords.map(() => `j.title LIKE ?`).join(' OR ');
-        const values = roleKeywords.map(k => `%${k}%`);
+        const sectorIds = sectorRows.map(row => row.sector_id);
 
+        // 공고 조회
         const query = `
             SELECT
                 j.job_posting_id AS id,
-                c.company_name AS company,
-                j.title,
-                j.link,
-                e.experience_level AS experience,
-                j.salary,
-                j.deadline
+                ANY_VALUE(c.company_name) AS company,
+                ANY_VALUE(j.title) AS title,
+                ANY_VALUE(j.link) AS link,
+                ANY_VALUE(e.experience_level) AS experience,
+                ANY_VALUE(ed.education_level) AS education,
+                GROUP_CONCAT(DISTINCT l.location_name SEPARATOR ', ') AS location,
+                GROUP_CONCAT(DISTINCT s.sector_name SEPARATOR ', ') AS sectors,
+                ANY_VALUE(j.deadline) AS deadline
             FROM job_postings j
             JOIN companies c ON j.company_id = c.company_id
-            LEFT JOIN experiences e ON j.experience_id = e.experience_id
-            WHERE ${conditions};
+            LEFT JOIN job_posting_experiences jpe ON j.job_posting_id = jpe.job_posting_id
+            LEFT JOIN experiences e ON jpe.experience_id = e.experience_id
+            LEFT JOIN educations ed ON j.education_id = ed.education_id
+            JOIN job_posting_sectors jps ON j.job_posting_id = jps.job_posting_id
+            JOIN sectors s ON jps.sector_id = s.sector_id
+            LEFT JOIN job_posting_locations jpl ON j.job_posting_id = jpl.job_posting_id
+            LEFT JOIN locations l ON jpl.location_id = l.location_id
+            WHERE jps.sector_id IN (${sectorIds.map(() => '?').join(', ')})
+            GROUP BY j.job_posting_id
+            ORDER BY j.created_at DESC
         `;
 
-        const [rows] = await executeQuery(query, values);
-        res.json(rows);
 
+        const [rows] = await executeQuery(query, sectorIds);
+        res.json(rows);
     } catch (err) {
-        console.error(err.message);
+        console.error('getMyJobs 오류:', err.message);
         res.status(500).json({ error: err.message });
     }
 };

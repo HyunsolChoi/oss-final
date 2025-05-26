@@ -1,35 +1,53 @@
 // src/components/Navbar.tsx
 import React, {useEffect, useRef, useState} from 'react'
-import { useNavigate } from 'react-router-dom';
+import {useLocation, useNavigate} from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircleUser, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
+import {signout} from '../../../api/auth'
 import './Navbar.css'
+import {toast} from "react-toastify";
 
 interface Props {
     userId: string;
     activeTab: 'Top100' | 'Entry' | 'MyJob';
-    setActiveTab: (tab: 'Top100' | 'Entry' | 'MyJob') => void;
     activeTabHandler: (menu: 1 | 2 | 3) => void;
 }
 
-const Navbar: React.FC<Props> = ({ userId, activeTab, setActiveTab, activeTabHandler }) => {
+const Navbar: React.FC<Props> = ({ userId, activeTab, activeTabHandler }) => {
     const [scrolled, setScrolled] = useState(false);
     const [placeholder, setPlaceholder] = useState('검색어를 입력하세요');
     const [showDropdown, setShowDropdown] = useState(false);
 
     const dropdownRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
+    const location = useLocation();
 
-    const signout = () => {
-        localStorage.removeItem('token-careerfit');
-        localStorage.removeItem('careerfit-id');
-        navigate("/");
-        window.location.reload();
-    }
+    const signoutHandler = () => {
+        signout(userId)
+            .then(() => {
+                localStorage.removeItem('token-careerfit');
+                localStorage.removeItem('careerfit-id');
+                navigate('/');
+                window.location.reload();
+            })
+            .catch(() => {
+                toast.error('로그아웃 중 문제가 발생했습니다.');
+            });
+    };
+
+    const onLogoClick = () => {
+        if (location.pathname === '/') {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+            navigate('/');
+        }
+    };
 
     useEffect(() => {
         const handleScroll = () => {
-            setScrolled(window.scrollY >= 490);
+            if (window.location.pathname === '/') {
+                setScrolled(window.scrollY >= 490);
+            }
         };
 
         window.addEventListener('scroll', handleScroll);
@@ -63,16 +81,15 @@ const Navbar: React.FC<Props> = ({ userId, activeTab, setActiveTab, activeTabHan
             setPlaceholder("기업명, 키워드, 직무를 검색해보세요")
         else
             setPlaceholder("검색어를 입력하세요");
-
-        console.log(userId);
     }
 
     return (
         <nav className="navbar-wrapper">
             <div className="navbar">
-                <div className="navbar-logo" onClick={() => navigate('/')}>CareerFit</div>
+                <div className="navbar-logo" onClick={() => onLogoClick()}>CareerFit</div>
                 <ul className={`navbar-links ${scrolled ? 'scrolled' : ''}`}>
                     <li>
+                        {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
                         <a href="#"
                             className={scrolled && activeTab === 'Top100' ? 'scrolled-active' : ''}
                             onClick={(e) => {
@@ -85,6 +102,7 @@ const Navbar: React.FC<Props> = ({ userId, activeTab, setActiveTab, activeTabHan
                         </a>
                     </li>
                     <li>
+                        {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
                         <a href="#"
                             className={scrolled && activeTab === 'Entry' ? 'scrolled-active' : ''}
                             onClick={(e) => {
@@ -97,6 +115,7 @@ const Navbar: React.FC<Props> = ({ userId, activeTab, setActiveTab, activeTabHan
                         </a>
                     </li>
                     <li>
+                        {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
                         <a href="#"
                             className={scrolled && activeTab === 'MyJob' ? 'scrolled-active' : ''}
                             onClick={(e) => {
@@ -131,7 +150,7 @@ const Navbar: React.FC<Props> = ({ userId, activeTab, setActiveTab, activeTabHan
                                     {userId}
                                 </div>
                                 <div className="logout" onClick={() => {
-                                    signout();
+                                    signoutHandler();
                                 }}>
                                     로그아웃
                                 </div>

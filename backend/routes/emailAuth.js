@@ -56,10 +56,10 @@ router.post('/verify', (req, res) => {
     // 검증 완료 후 코드 삭제
     delete codes[email];
 
-    res.cookie('emailVerified', email, {
-        httpOnly: true,
+    res.cookie('careerfit_emailVerified', 'true', {
+        httpOnly: false,
         secure: process.env.NODE_ENV === 'production',
-        maxAge: 10 * 60 * 1000,
+        maxAge: 10 * 60 * 1000,  // 10분
         sameSite: 'lax',
     });
 
