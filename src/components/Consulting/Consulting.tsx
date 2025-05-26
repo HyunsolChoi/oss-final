@@ -14,14 +14,13 @@ const Consulting: React.FC<Props> = ({userId}) => {
 
     //TODO: 왠진 모르겠는데 로그인이 안되어 있어도 컨설팅 됌.
     useEffect(() => {
-        if(userId){
             getConsulting()
               .then(setGpt)
               .catch(console.error);
-        }
 
     }, [userId]);
 
+    if(gpt !== null) console.log("gpt:", gpt.output);
 
     return (
         <div className="consulting-scroll-wrap">
