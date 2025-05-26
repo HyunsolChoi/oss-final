@@ -14,7 +14,7 @@
   align-items: center;
   justify-content: center;
   color: #fff;
-  font-size: 2rem;
+  font-size: 15px;
   margin: 0 auto;
   overflow: hidden;     /* overlay가 벗어나지 않도록 */
 }

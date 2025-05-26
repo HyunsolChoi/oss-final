@@ -12,13 +12,17 @@ const Consulting: React.FC<Props> = ({userId}) => {
     const [gpt, setGpt] = useState<Gpt | null>(null);
     const navigate = useNavigate();
 
-    //TODO: 왠진 모르겠는데 로그인이 안되어 있어도 컨설팅 됌.
+    //TODO: 로그인 했을때만 컨설팅
+    //TODO: UI 정리
+    //TODO: DB에 따라 추천
+    //TODO: 이미지 크롤링
+    //TODO: 링크에 따라 iframe 띄우기
+    //TODO: 로그인 에러 있음. 로그인 -> 홈으로 해야 로그인 됨.
+    //TODO: 페이지 전환되면 로그인 풀림. 왜지??
     useEffect(() => {
-        if(userId){
-            getConsulting()
-              .then(setGpt)
-              .catch(console.error);
-        }
+             getConsulting()
+                  .then(setGpt)
+                  .catch(console.error);
 
     }, [userId]);
 

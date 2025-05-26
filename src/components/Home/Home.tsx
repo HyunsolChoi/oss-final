@@ -149,7 +149,7 @@ const Home: React.FC<Props> = ({ userId, activeTab, activeTabHandler }) => {
                             {recommendJobs.map(job => (
                                 <a
                                     key={job.id}
-                                    href={job.link}
+                                    href={'/consulting'}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="recommend-card"
