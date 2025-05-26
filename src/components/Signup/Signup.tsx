@@ -71,11 +71,19 @@ const Signup: React.FC = () => {
             .map(cookie => cookie.trim());
 
         const hasAgreement = cookies.some(cookie =>
-            cookie.startsWith('agreementAccepted=')
+            cookie.startsWith('careerfit_agreementAccepted=')
         );
         const hasEmailVerified = cookies.some(cookie =>
-            cookie.startsWith('emailVerified=')
+            cookie.startsWith('careerfit_emailVerified=')
         );
+
+        if(!hasAgreement){
+            toast.error("동의 페이지 쿠키 에러")
+        }
+
+        if(!hasEmailVerified){
+            toast.error("이메일 페이지 쿠키 에러")
+        }
 
         if (!hasAgreement || !hasEmailVerified) {
             // 약관 동의가 없으면 동의 페이지로

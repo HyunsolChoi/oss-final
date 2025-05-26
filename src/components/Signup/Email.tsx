@@ -59,8 +59,6 @@ const Email: React.FC = () => {
             return;
         }
 
-        // todo: 이메일 중복 검사 해야함
-
         try {
             const isAvailable = await checkEmailDuplicate(email);
             if (!isAvailable) {
@@ -87,16 +85,6 @@ const Email: React.FC = () => {
         try {
             await verifyEmailAuth(email, inputCode);
             setIsVerified(true);
-
-
-            document.cookie = [
-                'emailVerified=true',
-                'path=/',
-                'max-age=300', // 5분
-                'sameSite=Lax',
-                process.env.NODE_ENV === 'production' ? 'secure' : ''
-            ].filter(Boolean).join('; ');
-
 
         } catch (err: any) {
             console.error(err);
