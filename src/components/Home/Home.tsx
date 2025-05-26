@@ -56,9 +56,7 @@ const Home: React.FC<Props> = ({ userId, activeTab, activeTabHandler }) => {
                 {jobsToRender.map(job => (
                     <a
                         key={job.id}
-                        href={job.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        href={'/consulting'}
                         className="rect-card"
                     >
                         <div className="card-content">

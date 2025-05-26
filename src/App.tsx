@@ -101,7 +101,7 @@ function App() {
             </Route>
             <Route
                 path="/consulting"
-                element={<Consulting/>}> // token 넘겨줘서 유효성 판단 후 진입 가능하도록 해야함
+                element={<Consulting userId={userId}/>}> // token 넘겨줘서 유효성 판단 후 진입 가능하도록 해야함
             </Route>
             <Route
                 path="/profile"
