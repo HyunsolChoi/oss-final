@@ -53,7 +53,6 @@ const Signin: React.FC<Props> = ({ userId, setUserId }) => {
                         localStorage.removeItem('careerfit-id');
                     }
 
-                    toast.success('로그인 성공!');
                     navigate('/');
                 } else if (result && 'message' in result) {
                     toast.error(result.message);
@@ -121,8 +120,11 @@ const Signin: React.FC<Props> = ({ userId, setUserId }) => {
                     <button type="submit" className="login-button">로그인</button>
 
                     <div className="link-row">
+                        {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
                         <a href="#">아이디 찾기</a>
+                        {/* todo : 아이디 찾기 비밀번호 재설정 만들어야함 */}
                         <span>|</span>
+                        {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
                         <a href="#">비밀번호 재설정</a>
                         <span>|</span>
                         <a href="/agreement">회원가입</a>

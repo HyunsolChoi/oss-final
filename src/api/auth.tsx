@@ -162,4 +162,3 @@ export async function signup(data: {
         return { success: false, message: '서버와의 통신 중 오류 발생' };
     }
 }
-

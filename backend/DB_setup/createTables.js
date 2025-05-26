@@ -59,7 +59,7 @@ async function createTables() {
             // 8. 스킬 테이블
             `CREATE TABLE IF NOT EXISTS skills (
                 skill_id BIGINT PRIMARY KEY AUTO_INCREMENT,
-                name VARCHAR(100) UNIQUE
+                name VARCHAR(60) UNIQUE
             );`,
 
             // 9. 사용자 - 스킬 매핑 테이블

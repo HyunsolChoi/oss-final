@@ -158,3 +158,85 @@ exports.getMyJobs = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
+
+/**
+ *
+ * 키워드 검색
+ */
+exports.searchJobs = async (req, res) => {
+    const { query } = req.body;
+    if (!query || typeof query !== 'string') {
+        return res.status(400).json({ error: '검색어가 필요합니다.' });
+    }
+
+    const raw = query.trim();
+    // 1. 공백으로 분리한 뒤, 모두 2글자 이상인지 확인
+    const parts = raw.split(/\s+/);
+    const keywords = parts.every(p => p.length >= 2) ? parts : [raw];
+    const likeParams = keywords.map(k => `%${k}%`);
+
+    try {
+        // 2. 제목 기반 검색
+        const [titleMatches] = await executeQuery(`
+            SELECT DISTINCT
+                j.job_posting_id AS id,
+                j.title, j.deadline, j.link, j.views,
+                c.company_name AS company,
+                GROUP_CONCAT(DISTINCT s.sector_name) AS sectors
+            FROM job_postings j
+            JOIN companies c ON j.company_id = c.company_id
+            LEFT JOIN job_posting_sectors jps ON j.job_posting_id = jps.job_posting_id
+            LEFT JOIN sectors s ON jps.sector_id = s.sector_id
+            WHERE ${keywords.map(() => 'j.title LIKE ?').join(' OR ')}
+            GROUP BY j.job_posting_id
+        `, likeParams);
+
+        // 3. 직무 기반 검색
+        const [sectorMatches] = await executeQuery(`
+            SELECT DISTINCT
+                j.job_posting_id AS id,
+                j.title, j.deadline, j.link, j.views,
+                c.company_name AS company,
+                GROUP_CONCAT(DISTINCT s.sector_name) AS sectors
+            FROM job_postings j
+            JOIN companies c ON j.company_id = c.company_id
+            JOIN job_posting_sectors jps ON j.job_posting_id = jps.job_posting_id
+            JOIN sectors s ON jps.sector_id = s.sector_id
+            WHERE ${keywords.map(() => 's.sector_name LIKE ?').join(' OR ')}
+            GROUP BY j.job_posting_id
+        `, likeParams);
+
+        // 4. 회사명 기반 검색
+        const [companyMatches] = await executeQuery(`
+            SELECT DISTINCT
+                j.job_posting_id AS id,
+                j.title, j.deadline, j.link, j.views,
+                c.company_name AS company,
+                GROUP_CONCAT(DISTINCT s.sector_name) AS sectors
+            FROM job_postings j
+            JOIN companies c ON j.company_id = c.company_id
+            LEFT JOIN job_posting_sectors jps ON j.job_posting_id = jps.job_posting_id
+            LEFT JOIN sectors s ON jps.sector_id = s.sector_id
+            WHERE ${keywords.map(() => 'c.company_name LIKE ?').join(' OR ')}
+            GROUP BY j.job_posting_id
+        `, likeParams);
+
+        // 5. 순서대로 병합 + 중복 제거
+        const seen = new Set();
+        const merged = [];
+        for (const list of [titleMatches, sectorMatches, companyMatches]) {
+            for (const job of list) {
+                if (!seen.has(job.id)) {
+                    seen.add(job.id);
+                    merged.push(job);
+                }
+            }
+        }
+
+        return res.json(merged);
+    } catch (err) {
+        console.error('검색 오류:', err.message);
+        return res.status(500).json({ error: '검색 중 오류 발생' });
+    }
+};
+

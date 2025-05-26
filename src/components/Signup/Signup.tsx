@@ -78,6 +78,11 @@ const Signup: React.FC<Props> = ({ email }) => {
             return;
         }
 
+        if (job.trim().length > 15) {
+            toast.error("직무는 15글자 이하로 입력해주세요");
+            return;
+        }
+
         if (!isValidJob(job)) {
             toast.error("직무는 한글, 영어, 숫자, / ( ) & . + # 만 입력 가능합니다");
             return;
@@ -96,6 +101,11 @@ const Signup: React.FC<Props> = ({ email }) => {
         }
 
         for (const skill of trimmedSkills) {
+            if (skill.length > 20) {
+                toast.error(`기술 '${skill}'은 20글자 이하로 입력해주세요`);
+                return;
+            }
+
             if (!isValidSkill(skill)) {
                 toast.error(`기술 '${skill}'은 허용되지 않는 문자를 포함하고 있습니다`);
                 return;

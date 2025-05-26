@@ -42,5 +42,14 @@ export async function getMyJobs(userId: string): Promise<Job[]> {
     return (await res.json() as Promise<Job[]>)
 }
 
+export async function getSearchResult(query: string): Promise<Job[]> {
+    const res = await fetch('/api/jobs/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: query.trim() }),
+    });
 
+    if (!res.ok) throw new Error('검색 결과 요청 실패');
 
+    return await res.json() as Promise<Job[]>;
+}

@@ -12,6 +12,7 @@ import Consulting from "./components/Consulting/Consulting";
 import Agreement from "./components/Signup/TermsAgreement"
 import Email from "./components/Signup/Email";
 import Profile from "./components/Profile/Profile";
+import Search from "./components/Search/Search";
 
 interface JwtPayload {
     userId: string;
@@ -104,6 +105,9 @@ function App() {
                 path="/consulting"
                 element={<Consulting/>}>
                 {/* todo: token 넘겨줘서 유효성 판단 후 진입 가능하도록 해야함*/}
+            </Route>
+            <Route path="/search"
+                   element={<Search />} >
             </Route>
             <Route
                 path="/profile"

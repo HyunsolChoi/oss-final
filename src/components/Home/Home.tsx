@@ -21,7 +21,6 @@ const Home: React.FC<Props> = ({ userId, activeTab, activeTabHandler }) => {
     const navigate = useNavigate();
     const loadMoreRef = React.useRef<HTMLDivElement | null>(null);
 
-
     const renderCurrentJobs = (
         activeTab: 'Top100' | 'Entry' | 'MyJob',
         topJobs: Job[],
