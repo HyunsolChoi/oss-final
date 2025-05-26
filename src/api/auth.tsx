@@ -90,6 +90,23 @@ export async function checkEmailDuplicate(email: string): Promise<boolean> {
     return data.duplicate === false; // 중복되지 않은 경우만 true 반환
 }
 
+// ID 중복검사
+export async function checkDuplicateId(userId: string): Promise<boolean> {
+    const res = await fetch('/api/auth/check-id', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+    });
+
+    if (!res.ok) {
+        const { message } = await res.json();
+        throw new Error(message || '아이디 중복 검사 실패');
+    }
+
+    const data = await res.json();
+    return data.duplicate === false;
+}
+
 // 비밀번호 변경
 export async function changePassword(
     userId: string,
@@ -114,3 +131,35 @@ export async function changePassword(
         return { success: false, message: '서버와의 통신 중 오류 발생' };
     }
 }
+
+// 회원가입
+export async function signup(data: {
+    userId: string;
+    email: string;
+    password: string;
+    sector: string;
+    education: string;
+    region: string;
+    skills: string[];
+}): Promise<{ success: boolean; message?: string }> {
+    try {
+        const response = await fetch('/api/auth/signup', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+        });
+
+        const result = await response.json();
+
+        return {
+            success: result.success ?? false,
+            message: result.message,
+        };
+    } catch (error) {
+        console.error('회원가입 요청 실패:', error);
+        return { success: false, message: '서버와의 통신 중 오류 발생' };
+    }
+}
+

@@ -21,6 +21,7 @@ interface JwtPayload {
 function App() {
     const [activeTab, setActiveTab] = useState<'Top100' | 'Entry' | 'MyJob'>('Top100');
     const [userId, setUserId] = useState('');
+    const [email, setEmail] = useState('');
 
     const navigate = useNavigate();
 
@@ -93,15 +94,16 @@ function App() {
             </Route>
             <Route
                 path="/email"
-                element={<Email/>}>
+                element={<Email email={email} setEmail={setEmail}/>}>
             </Route>
             <Route
                 path="/signup"
-                element={<Signup/>}>
+                element={<Signup email={email}/>}>
             </Route>
             <Route
                 path="/consulting"
-                element={<Consulting/>}> // token 넘겨줘서 유효성 판단 후 진입 가능하도록 해야함
+                element={<Consulting/>}>
+                {/* todo: token 넘겨줘서 유효성 판단 후 진입 가능하도록 해야함*/}
             </Route>
             <Route
                 path="/profile"

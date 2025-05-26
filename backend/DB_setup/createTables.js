@@ -56,13 +56,13 @@ async function createTables() {
                 sector VARCHAR(30) NOT NULL
             );`,
 
-            // 스킬 테이블
+            // 8. 스킬 테이블
             `CREATE TABLE IF NOT EXISTS skills (
                 skill_id BIGINT PRIMARY KEY AUTO_INCREMENT,
                 name VARCHAR(100) UNIQUE
             );`,
 
-            // 사용자 - 스킬 매핑 테이블
+            // 9. 사용자 - 스킬 매핑 테이블
             `CREATE TABLE user_skills (
               user_id CHAR(30),
               skill_id BIGINT,
@@ -71,7 +71,7 @@ async function createTables() {
               FOREIGN KEY (skill_id) REFERENCES skills(skill_id)
             );`,
 
-            // 8. 채용 정보 테이블
+            // 10. 채용 정보 테이블
             `CREATE TABLE IF NOT EXISTS job_postings (
                 job_posting_id BIGINT AUTO_INCREMENT PRIMARY KEY,
                 company_id BIGINT NOT NULL,                
@@ -88,7 +88,7 @@ async function createTables() {
                 FOREIGN KEY (education_id) REFERENCES educations(education_id)
             );`,
 
-            // 9. 채용-경력 매핑 테이블
+            // 11. 채용-경력 매핑 테이블
             `CREATE TABLE IF NOT EXISTS job_posting_experiences (
                 job_posting_id BIGINT,
                 experience_id BIGINT,
@@ -97,7 +97,7 @@ async function createTables() {
                 FOREIGN KEY (experience_id) REFERENCES experiences(experience_id) ON DELETE CASCADE
             );`,
 
-            // 10. 채용-지역 매핑 테이블
+            // 12. 채용-지역 매핑 테이블
             `CREATE TABLE IF NOT EXISTS job_posting_locations (
                 job_posting_id BIGINT,
                 location_id BIGINT,
@@ -106,7 +106,7 @@ async function createTables() {
                 FOREIGN KEY (location_id) REFERENCES locations(location_id) ON DELETE CASCADE
             );`,
 
-            // 11. 채용-고용 형태 매핑 테이블
+            // 13. 채용-고용 형태 매핑 테이블
             `CREATE TABLE IF NOT EXISTS job_posting_employment_types (
                 job_posting_id BIGINT,
                 employment_type_id BIGINT,
@@ -115,7 +115,7 @@ async function createTables() {
                 FOREIGN KEY (employment_type_id) REFERENCES employment_types(employment_type_id) ON DELETE CASCADE
             );`,
 
-            // 12. 채용-직무 분야 매핑 테이블
+            // 14. 채용-직무 분야 매핑 테이블
             `CREATE TABLE IF NOT EXISTS job_posting_sectors (
                 job_posting_id BIGINT,
                 sector_id BIGINT,
@@ -124,7 +124,7 @@ async function createTables() {
                 FOREIGN KEY (sector_id) REFERENCES sectors(sector_id) ON DELETE CASCADE
             );`,
 
-            // 13. 유저 토큰 테이블
+            // 15. 유저 토큰 테이블
             `CREATE TABLE user_tokens (
               user_id CHAR(30) PRIMARY KEY,
               refresh_token VARCHAR(512) NOT NULL UNIQUE,
@@ -132,7 +132,7 @@ async function createTables() {
               FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
             );`,
 
-            // 14. 로그인 이력 테이블
+            // 16. 로그인 이력 테이블
             `CREATE TABLE IF NOT EXISTS login_history (
                 id BIGINT AUTO_INCREMENT PRIMARY KEY,
                 user_id CHAR(30) NOT NULL,
@@ -140,13 +140,13 @@ async function createTables() {
                 FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
             );`,
 
-            // 사용자의 지역 테이블 (도 단위)
+            // 17. 사용자의 지역 테이블 (도 단위)
             `CREATE TABLE IF NOT EXISTS user_locations (
               location_id INT AUTO_INCREMENT PRIMARY KEY,
               location_name VARCHAR(30) UNIQUE
             );`,
 
-            // 사용자 지역 매핑
+            // 18. 사용자 지역 매핑
             `CREATE TABLE IF NOT EXISTS user_location_mapping (
                 user_id CHAR(30),
                 location_id INT,
@@ -155,11 +155,13 @@ async function createTables() {
                 FOREIGN KEY (location_id) REFERENCES user_locations(location_id)
             );`,
 
+            // 19. 사용자 학력 정보 테이블
             `CREATE TABLE IF NOT EXISTS user_educations (
                 user_education_id INT AUTO_INCREMENT PRIMARY KEY,
                 education_name CHAR(30) NOT NULL
             )`,
 
+            // 20. 사용자-학력 맵핑 테이블
             `CREATE TABLE IF NOT EXISTS user_educations_mapping (
                 user_id CHAR(30) NOT NULL,
                 user_education_id INT NOT NULL,
@@ -168,7 +170,7 @@ async function createTables() {
                 FOREIGN KEY (user_education_id) REFERENCES user_educations(user_education_id)
             );`,
 
-            // GPT 컨설팅 관리 테이블
+            // 21. GPT 컨설팅 관리 테이블
             `CREATE TABLE IF NOT EXISTS consultations (
                 consultation_id BIGINT AUTO_INCREMENT PRIMARY KEY,
                 user_id CHAR(30) NOT NULL,

@@ -1,4 +1,4 @@
-const { executeQuery } = require('../Utils/executeDB');
+const { executeQuery, executeTransaction } = require('../Utils/executeDB');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 
@@ -80,7 +80,7 @@ exports.authSignout = async (req, res) => {
 };
 
 // 이메일 중복 검사
-exports.authCheckEmail = async (req, res) => {
+exports.checkDuplicateEmail = async (req, res) => {
     const { email } = req.body;
 
     if (!email) {
@@ -104,6 +104,33 @@ exports.authCheckEmail = async (req, res) => {
         return res.status(500).json({ success: false, message: '이메일 중복 검사 중 오류 발생' });
     }
 };
+
+// 아이디 중복 검사
+exports.checkDuplicateId = async (req, res) => {
+    const { userId } = req.body;
+
+    if (!userId) {
+        return res.status(400).json({ success: false, message: 'userId는 필수입니다.' });
+    }
+
+    try {
+        const query = `SELECT user_id FROM users WHERE user_id = ? LIMIT 1`;
+        const [rows] = await executeQuery(query, [userId]);
+
+        if (rows.length > 0) {
+            // 아이디 중복됨
+            return res.json({ success: true, duplicate: true });
+        } else {
+            // 사용 가능한 아이디
+            return res.json({ success: true, duplicate: false });
+        }
+
+    } catch (e) {
+        console.error('checkDuplicateId 오류:', e.message);
+        return res.status(500).json({ success: false, message: '아이디 중복 검사 중 오류 발생' });
+    }
+};
+
 
 // 비밀번호 변경
 exports.authChangePassword = async (req, res) => {
@@ -135,3 +162,94 @@ exports.authChangePassword = async (req, res) => {
     }
 };
 
+// 회원가입
+exports.authSignup = async (req, res) => {
+    const { userId, email, password, sector, education, region, skills } = req.body;
+
+    if (!userId || !email || !password || !sector || !education || !region || !skills || !Array.isArray(skills)) {
+        return res.status(400).json({ success: false, message: '모든 항목을 입력해주세요.' });
+    }
+
+    const hashedPwd = crypto.createHash('sha256').update(password).digest('hex');
+    const queries = [];
+
+    try {
+        // 1. users 테이블에 사용자 정보 삽입
+        queries.push({
+            query: `INSERT INTO users (user_id, email, password, sector) VALUES (?, ?, ?, ?)`,
+            params: [userId, email, hashedPwd, sector]
+        });
+
+        // 2. 학력 ID 확인 또는 삽입
+        const [[eduRow]] = await executeQuery(
+            `SELECT user_education_id FROM user_educations WHERE education_name = ? LIMIT 1`,
+            [education]
+        );
+        let eduId = eduRow?.user_education_id;
+
+        if (!eduId) {
+            const [{ insertId }] = await executeQuery(
+                `INSERT INTO user_educations (education_name) VALUES (?)`,
+                [education]
+            );
+            eduId = insertId;
+        }
+
+        queries.push({
+            query: `INSERT INTO user_educations_mapping (user_id, user_education_id) VALUES (?, ?)`,
+            params: [userId, eduId]
+        });
+
+        // 3. 지역 ID 확인 또는 삽입
+        const [[locRow]] = await executeQuery(
+            `SELECT location_id FROM user_locations WHERE location_name = ? LIMIT 1`,
+            [region]
+        );
+        let locId = locRow?.location_id;
+
+        if (!locId) {
+            const [{ insertId }] = await executeQuery(
+                `INSERT INTO user_locations (location_name) VALUES (?)`,
+                [region]
+            );
+            locId = insertId;
+        }
+
+        queries.push({
+            query: `INSERT INTO user_location_mapping (user_id, location_id) VALUES (?, ?)`,
+            params: [userId, locId]
+        });
+
+        // 4. 기술 처리
+        for (const name of skills) {
+            if (!name || typeof name !== 'string') continue;
+
+            const [[skillRow]] = await executeQuery(
+                `SELECT skill_id FROM skills WHERE name = ? LIMIT 1`,
+                [name]
+            );
+
+            let skillId = skillRow?.skill_id;
+            if (!skillId) {
+                const [{ insertId }] = await executeQuery(
+                    `INSERT INTO skills (name) VALUES (?)`,
+                    [name]
+                );
+                skillId = insertId;
+            }
+
+            queries.push({
+                query: `INSERT INTO user_skills (user_id, skill_id) VALUES (?, ?)`,
+                params: [userId, skillId]
+            });
+        }
+
+        // 트랜잭션 실행
+        await executeTransaction(queries);
+        return res.status(201).json({ success: true, message: '회원가입 완료' });
+
+    } catch (e) {
+        console.error('authSignup 오류:', e.message);
+        return res.status(500).json({ success: false, message: '회원가입 중 오류 발생' });
+    }
+};

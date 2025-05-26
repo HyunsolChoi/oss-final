@@ -79,9 +79,9 @@ const Signin: React.FC<Props> = ({ userId, setUserId }) => {
             <div className="login-wrapper">
                 <h2>로그인</h2>
                 <form
-                    onSubmit={(e) => {
+                    onSubmit={async (e) => {
                         e.preventDefault(); // 기본 폼 제출 방지
-                        signHandler(); // 로그인 실행
+                        await signHandler(); // 로그인 실행
                     }}
                 >
                     <div className="input-group">
