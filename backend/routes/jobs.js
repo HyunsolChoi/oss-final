@@ -7,5 +7,6 @@ router.get('/top100',  ctrl.getTop100Jobs);
 router.get('/entry',   ctrl.getEntryLevelJobs);
 router.post('/myjobs',   ctrl.getMyJobs);
 router.post('/search', ctrl.searchJobs);
+router.post('/jobinfo', ctrl.getJobInfo);
 
 module.exports = router;

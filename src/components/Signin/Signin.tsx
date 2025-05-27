@@ -11,9 +11,10 @@ import Footer from "../utils/Footer/Footer";
 interface Props {
     userId: string;
     setUserId: (id: string) => void;
+    checkToken: () =>  string | undefined;
 }
 
-const Signin: React.FC<Props> = ({ userId, setUserId }) => {
+const Signin: React.FC<Props> = ({ userId, setUserId, checkToken }) => {
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [saveId, setSaveId] = useState(false);
@@ -72,6 +73,15 @@ const Signin: React.FC<Props> = ({ userId, setUserId }) => {
             setSaveId(true);
         }
     }, [setUserId]);
+
+    useEffect(() => {
+        const validToken = checkToken();
+        
+        if(validToken){ // 로그인 되어있으면 로그인 페이지 접근불가 하도록
+            navigate('/');
+            return;
+        }
+    }, [checkToken, navigate]);
 
     return (
         <div className="wrapper-footer">

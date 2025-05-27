@@ -3,7 +3,8 @@ import { useSearchParams } from 'react-router-dom';
 import { getSearchResult } from '../../api/jobs';
 import './Search.css';
 import { Job } from '../../api/jobs';
-import {toast} from "react-toastify"; // Job 타입만 사용
+import {toast} from "react-toastify";
+import Footer from "../utils/Footer/Footer"; // Job 타입만 사용
 
 const Search: React.FC = () => {
     const [searchParams] = useSearchParams();
@@ -117,7 +118,6 @@ const Search: React.FC = () => {
     };
 
     return (
-
         <div className="search-wrapper">
             <div className="search">
                 <div className="list-and-graphic">
@@ -127,9 +127,9 @@ const Search: React.FC = () => {
                     <div className="graphic">여백</div>
                 </div>
             </div>
+            <Footer />
         </div>
-    )
-        ;
+    );
 };
 
 export default Search;

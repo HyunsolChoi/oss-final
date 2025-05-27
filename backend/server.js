@@ -5,6 +5,7 @@ const jobsRouter = require('./routes/jobs');
 const emailAuthRouter = require('./routes/emailAuth');
 const authRouter = require('./routes/auth');
 const userRouter = require('./routes/user');
+const gptRouter = require('./routes/gpt');
 const { startTokenCleanupScheduler } = require('./Utils/tokenCleaner'); // 경로에 맞게 수정
 
 const app = express();
@@ -19,6 +20,8 @@ app.use('/api/emailAuth', emailAuthRouter);
 app.use('/api/auth', authRouter);
 // 사용자 정보 관리
 app.use('/api/user', userRouter);
+// gpt 결과 라우터
+app.use('/api/gpt', gptRouter);
 
 startTokenCleanupScheduler();
 

@@ -56,18 +56,18 @@ function App() {
                 if (decoded.exp > now) {
                     // 토큰 유효 → 로그인 유지
                     setUserId(decoded.userId);
-                    return true;
+                    return decoded.userId;
                 } else {
                     // 토큰 만료
                     setUserId('');
                     localStorage.removeItem('token-careerfit');
-                    return false;
+                    return '';
                 }
             } catch (e) {
                 console.error('토큰 디코딩 실패', e);
                 setUserId('');
                 localStorage.removeItem('token-careerfit');
-                return false;
+                return '';
             }
         }
     }
@@ -87,7 +87,7 @@ function App() {
             />
             <Route
                 path="/signin"
-                element={<Signin userId={userId} setUserId={setUserId}/>}
+                element={<Signin userId={userId} setUserId={setUserId} checkToken={checkToken}/>}
             />
             <Route
                 path="/agreement"
@@ -102,9 +102,9 @@ function App() {
                 element={<Signup email={email}/>}>
             </Route>
             <Route
-                path="/consulting"
-                element={<Consulting/>}>
-                {/* todo: token 넘겨줘서 유효성 판단 후 진입 가능하도록 해야함*/}
+                path="/consulting/:jobId"
+                element={<Consulting checkToken={checkToken}/>}>
+                {/* userId를 넘겨주고  */}
             </Route>
             <Route path="/search"
                    element={<Search />} >

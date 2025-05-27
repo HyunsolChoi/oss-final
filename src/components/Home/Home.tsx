@@ -4,6 +4,7 @@ import './Home.css';
 import { Job, getLatestJobs, getTop100Jobs, getEntryLevelJobs, getMyJobs } from '../../api/jobs'
 import {useNavigate} from "react-router-dom";
 import Footer from "../utils/Footer/Footer";
+import {toast} from "react-toastify";
 
 interface Props {
     userId: string;
@@ -20,6 +21,15 @@ const Home: React.FC<Props> = ({ userId, activeTab, activeTabHandler }) => {
 
     const navigate = useNavigate();
     const loadMoreRef = React.useRef<HTMLDivElement | null>(null);
+
+    const postClickHandler = (jobId : number) => {
+        if(jobId <= 0 && jobId === null){
+            toast.error("유효하지 않은 공고");
+            return;
+        }
+        navigate(`/consulting/${jobId}`);
+        return;
+    }
 
     const renderCurrentJobs = (
         activeTab: 'Top100' | 'Entry' | 'MyJob',
@@ -53,13 +63,16 @@ const Home: React.FC<Props> = ({ userId, activeTab, activeTabHandler }) => {
         return (
             <>
                 {jobsToRender.map(job => (
+                    // eslint-disable-next-line jsx-a11y/anchor-is-valid
                     <a
                         key={job.id}
-                        href={job.link}
+                        href={'#'}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="rect-card"
-                    >
+                        onClick={(e)=>{
+                            e.preventDefault(); postClickHandler(job.id)}}>
+
                         <div className="card-content">
                             <div className="info">
                                 <div className="title">{job.title}</div>

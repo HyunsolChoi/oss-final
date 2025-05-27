@@ -166,7 +166,7 @@ exports.getMyJobs = async (req, res) => {
 exports.searchJobs = async (req, res) => {
     const { query } = req.body;
     if (!query || typeof query !== 'string') {
-        return res.status(400).json({ error: '검색어가 필요합니다.' });
+        return res.status(400).json({ error: '검색어가 필요합니다' });
     }
 
     const raw = query.trim();
@@ -240,3 +240,51 @@ exports.searchJobs = async (req, res) => {
     }
 };
 
+/**
+ * jobID로 공고 정보 조회 (consulting 페이지)
+ *
+ */
+exports.getJobInfo = async (req, res) => {
+    const { jobId } = req.body;
+
+    if (!jobId) {
+        return res.status(400).json({ success: false, message: 'jobId가 필요합니다' });
+    }
+
+    try {
+        const [[job]] = await executeQuery(`
+      SELECT
+        j.title,
+        c.company_name AS company,
+        j.deadline,
+        GROUP_CONCAT(DISTINCT l.location_name SEPARATOR ', ') AS location,
+        ed.education_level AS education,
+        GROUP_CONCAT(DISTINCT et.employment_type_name SEPARATOR ', ') AS employment_type,
+        GROUP_CONCAT(DISTINCT s.sector_name SEPARATOR ', ') AS sectors
+      FROM job_postings j
+      JOIN companies c ON j.company_id = c.company_id
+      LEFT JOIN job_posting_locations jpl ON j.job_posting_id = jpl.job_posting_id
+      LEFT JOIN locations l ON jpl.location_id = l.location_id
+      LEFT JOIN educations ed ON j.education_id = ed.education_id
+      LEFT JOIN job_posting_employment_types jpet ON j.job_posting_id = jpet.job_posting_id
+      LEFT JOIN employment_types et ON jpet.employment_type_id = et.employment_type_id
+      LEFT JOIN job_posting_sectors jps ON j.job_posting_id = jps.job_posting_id
+      LEFT JOIN sectors s ON jps.sector_id = s.sector_id
+      WHERE j.job_posting_id = ?
+      GROUP BY j.job_posting_id
+    `, [jobId]);
+
+        if (!job) {
+            return res.status(404).json({ success: false, message: '공고 정보를 찾을 수 없습니다.' });
+        }
+
+        return res.json({
+            success: true,
+            job,
+        });
+
+    } catch (err) {
+        console.error('[getJobInfo] 오류:', err.message);
+        return res.status(500).json({ success: false, message: '서버 오류' });
+    }
+};
