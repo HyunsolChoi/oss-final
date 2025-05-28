@@ -182,6 +182,13 @@ async function createTables() {
                 FOREIGN KEY (job_posting_id) REFERENCES job_postings(job_posting_id)
             );`,
 
+            // 22. 이메일 인증 키 관리 테이블
+            `CREATE TABLE IF NOT EXISTS email_verification (
+                email VARCHAR(30) PRIMARY KEY,
+                code CHAR(6) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );`
+
             // // 16. 북마크 정보 저장 테이블
             // `CREATE TABLE IF NOT EXISTS bookmarks (
             //     user_id CHAR(30) NOT NULL,

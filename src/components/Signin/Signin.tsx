@@ -130,12 +130,10 @@ const Signin: React.FC<Props> = ({ userId, setUserId, checkToken }) => {
                     <button type="submit" className="login-button">로그인</button>
 
                     <div className="link-row">
-                        {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                        <a href="#">아이디 찾기</a>
+                        <a href="/find_idpw?tab=1">아이디 찾기</a>
                         {/* todo : 아이디 찾기 비밀번호 재설정 만들어야함 */}
                         <span>|</span>
-                        {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                        <a href="#">비밀번호 재설정</a>
+                        <a href="/find_idpw?tab=2">비밀번호 재설정</a>
                         <span>|</span>
                         <a href="/agreement">회원가입</a>
                     </div>

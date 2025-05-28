@@ -112,9 +112,9 @@ const Email: React.FC<EmailProps> = ({ email, setEmail }) => {
                         />
                         <span
                             className={`show-toggle${isSending ? ' disabled' : ''}`}
-                            onClick={() => {
+                            onClick={async () => {
                                 if (isSending) return;
-                                sendVerificationCode();
+                                await sendVerificationCode();
                             }}
                         >
                             {codeSent ? '재요청' : '인증 요청'}

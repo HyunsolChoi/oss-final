@@ -73,6 +73,21 @@ export async function verifyEmailAuth(email: string, code: string): Promise<void
     }
 }
 
+// 이메일 확인 및 아이디 반환 (아이디 찾기)
+export async function verifyEmailGetId(email: string, code: string): Promise<string> {
+    const res = await fetch('/api/emailAuth/findId', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code }),
+    });
+    if (!res.ok) {
+        const {message} = await res.json()
+        throw new Error(message || '인증 실패')
+    }
+    const data = await res.json();
+    return data.message;
+}
+
 // 이메일 중복 검사
 export async function checkEmailDuplicate(email: string): Promise<boolean> {
     const res = await fetch('/api/auth/check-email', {
@@ -105,6 +120,22 @@ export async function checkDuplicateId(userId: string): Promise<boolean> {
 
     const data = await res.json();
     return data.duplicate === false;
+}
+
+// 비밀번호 재설정
+export async function resetPassword(userId: string, email: string): Promise<{ success: boolean; message?: string }> {
+    const res = await fetch('/api/emailAuth/resetPassword', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, email }),
+    })
+
+    if (!res.ok) {
+        const { message } = await res.json();
+        throw new Error(message || '비밀번호 재설정 실패');
+    }
+
+    return await res.json();
 }
 
 // 비밀번호 변경

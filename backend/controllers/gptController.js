@@ -111,7 +111,6 @@ exports.getConsultingContext = async (req, res) => {
 2. 약점 또는 개선점
 3. 커리어 설계 및 방향 제시
 4. 종합 코멘트 및 추천 여부
-
                 `
             }
         ];

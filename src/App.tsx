@@ -13,6 +13,7 @@ import Agreement from "./components/Signup/TermsAgreement"
 import Email from "./components/Signup/Email";
 import Profile from "./components/Profile/Profile";
 import Search from "./components/Search/Search";
+import FindIdPw from "./components/Signin/FindIdPw";
 
 interface JwtPayload {
     userId: string;
@@ -104,7 +105,6 @@ function App() {
             <Route
                 path="/consulting/:jobId"
                 element={<Consulting checkToken={checkToken}/>}>
-                {/* userId를 넘겨주고  */}
             </Route>
             <Route path="/search"
                    element={<Search />} >
@@ -112,6 +112,10 @@ function App() {
             <Route
                 path="/profile"
                 element={<Profile userId={userId}/>}>
+            </Route>
+            <Route
+                path="/find_idpw"
+                element={<FindIdPw checkToken={checkToken}/>}>
             </Route>
         </Routes>
         <ToastContainer
