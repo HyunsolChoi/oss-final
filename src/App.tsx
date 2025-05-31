@@ -12,6 +12,8 @@ import Consulting from "./components/Consulting/Consulting";
 import Agreement from "./components/Signup/TermsAgreement"
 import Email from "./components/Signup/Email";
 import Profile from "./components/Profile/Profile";
+import Search from "./components/Search/Search";
+import FindIdPw from "./components/Signin/FindIdPw";
 
 interface JwtPayload {
     userId: string;
@@ -21,6 +23,7 @@ interface JwtPayload {
 function App() {
     const [activeTab, setActiveTab] = useState<'Top100' | 'Entry' | 'MyJob'>('Top100');
     const [userId, setUserId] = useState('');
+    const [email, setEmail] = useState('');
 
     const navigate = useNavigate();
 
@@ -54,18 +57,18 @@ function App() {
                 if (decoded.exp > now) {
                     // 토큰 유효 → 로그인 유지
                     setUserId(decoded.userId);
-                    return true;
+                    return decoded.userId;
                 } else {
                     // 토큰 만료
                     setUserId('');
                     localStorage.removeItem('token-careerfit');
-                    return false;
+                    return '';
                 }
             } catch (e) {
                 console.error('토큰 디코딩 실패', e);
                 setUserId('');
                 localStorage.removeItem('token-careerfit');
-                return false;
+                return '';
             }
         }
     }
@@ -85,7 +88,7 @@ function App() {
             />
             <Route
                 path="/signin"
-                element={<Signin userId={userId} setUserId={setUserId}/>}
+                element={<Signin userId={userId} setUserId={setUserId} checkToken={checkToken}/>}
             />
             <Route
                 path="/agreement"
@@ -93,19 +96,26 @@ function App() {
             </Route>
             <Route
                 path="/email"
-                element={<Email/>}>
+                element={<Email email={email} setEmail={setEmail}/>}>
             </Route>
             <Route
                 path="/signup"
-                element={<Signup/>}>
+                element={<Signup email={email}/>}>
             </Route>
             <Route
-                path="/consulting"
-                element={<Consulting userId={userId}/>}> // token 넘겨줘서 유효성 판단 후 진입 가능하도록 해야함
+                path="/consulting/:jobId"
+                element={<Consulting checkToken={checkToken}/>}>
+            </Route>
+            <Route path="/search"
+                   element={<Search />} >
             </Route>
             <Route
                 path="/profile"
                 element={<Profile userId={userId}/>}>
+            </Route>
+            <Route
+                path="/find_idpw"
+                element={<FindIdPw checkToken={checkToken}/>}>
             </Route>
         </Routes>
         <ToastContainer

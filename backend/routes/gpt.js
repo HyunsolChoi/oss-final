@@ -1,8 +1,7 @@
 const express= require('express');
 const router= express.Router();
-const ctrl= require('../controllers/gptContorller');
+const ctrl= require('../controllers/gptController');
 
-router.get('/output',  ctrl.getConsulting);
-
+router.post('/consulting',  ctrl.getConsultingContext);
 
 module.exports = router;

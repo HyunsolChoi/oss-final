@@ -3,9 +3,15 @@ import './Signup.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser, faLock, faBriefcase, faLightbulb  } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'react-toastify';
+import { checkDuplicateId, signup } from '../../api/auth'
 import {useNavigate} from "react-router-dom";
 
-const Signup: React.FC = () => {
+
+interface Props {
+    email: string;
+}
+
+const Signup: React.FC<Props> = ({ email }) => {
     const [userId, setUserId] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -44,26 +50,123 @@ const Signup: React.FC = () => {
         return regex.test(pwd);
     };
 
+    const isValidJob = (text: string): boolean => {
+        const regex = /^[a-zA-Z0-9가-힣/()&.+#]+$/;
+        return regex.test(text);
+    };
+
+    const isValidSkill = (text: string): boolean => {
+        const regex = /^[a-zA-Z0-9가-힣()]+$/;
+        return regex.test(text);
+    };
+
+
     const hasDuplicateSkills = (skills: string[]): boolean => {
         const trimmed = skills.map(s => s.trim()).filter(s => s !== '');
         const unique = new Set(trimmed);
         return unique.size !== trimmed.length;
     };
 
-    const signupComplete = () => {
+    const signupComplete = async () => {
         if(!isValidUserId(userId) || !isValidPwd(password) || userId===password){
             toast.error("유효하지 않은 아이디와 비밀번호 입니다")
             return;
         }
+
+        if (!job.trim()) {
+            toast.error("직무를 입력해주세요");
+            return;
+        }
+
+        if (job.trim().length > 15) {
+            toast.error("직무는 15글자 이하로 입력해주세요");
+            return;
+        }
+
+        if (!isValidJob(job)) {
+            toast.error("직무는 한글, 영어, 숫자, / ( ) & . + # 만 입력 가능합니다");
+            return;
+        }
+
+        const trimmedSkills = skills.map(s => s.trim()).filter(s => s !== '');
+
+        if (trimmedSkills.length === 0) {
+            toast.error("하나 이상의 기술을 입력해주세요");
+            return;
+        }
+
         if (hasDuplicateSkills(skills)) {
             toast.error("기술 항목에 중복된 값이 있습니다");
             return;
         }
 
-        // todo : DB로 사용자 입력 정보 모두 보내기
+        for (const skill of trimmedSkills) {
+            if (skill.length > 20) {
+                toast.error(`기술 '${skill}'은 20글자 이하로 입력해주세요`);
+                return;
+            }
 
-        navigate("/signin");
+            if (!isValidSkill(skill)) {
+                toast.error(`기술 '${skill}'은 허용되지 않는 문자를 포함하고 있습니다`);
+                return;
+            }
+        }
+
+        try {
+            const result = await signup({
+                userId,
+                email,
+                password,
+                sector: job,
+                education,
+                region,
+                skills: trimmedSkills,
+            });
+
+            if (result.success) {
+                toast.success("회원가입 성공!");
+                navigate("/signin");
+            } else {
+                toast.error(result.message || "회원가입에 실패했습니다");
+            }
+        } catch (err: any) {
+            toast.error(err.message || "회원가입 중 오류 발생");
+        }
+
     }
+
+    const checkValidIdPwd = async () => {
+        if (!userId || !password || !confirmPassword) {
+            toast.error("모든 항목을 입력해주세요");
+            return;
+        }
+        if (!isValidUserId(userId)) {
+            toast.error("아이디는 영문자 및 숫자 6~20자여야 합니다");
+            return;
+        }
+        if (!isValidPwd(password)) {
+            toast.error("비밀번호는 영문자, 숫자 및 특수문자(!, @) 8~15자여야 합니다");
+            return;
+        }
+        if (userId === password) {
+            toast.error("아이디와 비밀번호는 같을 수 없습니다");
+            return;
+        }
+
+        try {
+            const isAvailable = await checkDuplicateId(userId);
+            if (!isAvailable) {
+                toast.error("이미 존재하는 아이디입니다");
+                return;
+            }
+        } catch (err: any) {
+            toast.error(err.message || "아이디 중복 확인 중 오류 발생");
+            return;
+        }
+
+        setShowNext(true);
+    };
+
 
     useEffect(() => {
         const cookies = document.cookie
@@ -77,21 +180,13 @@ const Signup: React.FC = () => {
             cookie.startsWith('careerfit_emailVerified=')
         );
 
-        if(!hasAgreement){
-            toast.error("동의 페이지 쿠키 에러")
-        }
-
-        if(!hasEmailVerified){
-            toast.error("이메일 페이지 쿠키 에러")
-        }
-
         if (!hasAgreement || !hasEmailVerified) {
             // 약관 동의가 없으면 동의 페이지로
             toast.error("세션이 만료되어 동의 페이지로 이동합니다")
             navigate('/agreement');
         }
 
-    }, []);
+    }, [navigate]);
 
 
     return (
@@ -138,24 +233,8 @@ const Signup: React.FC = () => {
 
                     <button
                         className="signup-button"
-                        onClick={() => {
-                            if (!userId || !password || !confirmPassword) {
-                                toast.error("모든 항목을 입력해주세요");
-                                return;
-                            }
-                            if (!isValidUserId(userId)) {
-                                toast.error("아이디는 영문자 및 숫자 6~20자여야 합니다");
-                                return;
-                            }
-                            if (!isValidPwd(password)) {
-                                toast.error("비밀번호는 영문자, 숫자 및 특수문자(!, @) 8~15자여야 합니다");
-                                return;
-                            }
-                            if(userId === password){
-                                toast.error("아이디와 비밀번호는 같을 수 없습니다");
-                                return;
-                            }
-                            setShowNext(true);
+                        onClick={async () => {
+                            await checkValidIdPwd();
                         }}
                     >
                         다음
@@ -173,13 +252,13 @@ const Signup: React.FC = () => {
                             onChange={(e) => setEducation(e.target.value)}
                         >
                             <option value="">학력 선택</option>
-                            <option value="noInput">미입력</option>
-                            <option value="middleschool">중학교 졸업</option>
-                            <option value="highschool">고등학교 졸업</option>
-                            <option value="associate">전문학사 (2~3년제)</option>
-                            <option value="bachelor">학사</option>
-                            <option value="master">석사</option>
-                            <option value="doctorate">박사</option>
+                            <option value="미입력">미입력</option>
+                            <option value="중졸">중학교 졸업</option>
+                            <option value="고졸">고등학교 졸업</option>
+                            <option value="전문학사">전문학사 (2~3년제)</option>
+                            <option value="학사">학사</option>
+                            <option value="석사">석사</option>
+                            <option value="박사">박사</option>
                         </select>
                     </div>
 

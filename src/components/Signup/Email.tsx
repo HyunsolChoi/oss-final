@@ -8,8 +8,12 @@ import {useNavigate} from "react-router-dom";
 import { faEnvelope, faKey } from '@fortawesome/free-solid-svg-icons';
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 
-const Email: React.FC = () => {
-    const [email, setEmail] = useState('');
+interface EmailProps {
+    email: string;
+    setEmail: (email: string) => void;
+}
+
+const Email: React.FC<EmailProps> = ({ email, setEmail }) => {
     const [inputCode, setInputCode] = useState('');
     const [codeSent, setCodeSent] = useState(false);
     const [isVerified, setIsVerified] = useState(false);
@@ -108,9 +112,9 @@ const Email: React.FC = () => {
                         />
                         <span
                             className={`show-toggle${isSending ? ' disabled' : ''}`}
-                            onClick={() => {
+                            onClick={async () => {
                                 if (isSending) return;
-                                sendVerificationCode();
+                                await sendVerificationCode();
                             }}
                         >
                             {codeSent ? '재요청' : '인증 요청'}

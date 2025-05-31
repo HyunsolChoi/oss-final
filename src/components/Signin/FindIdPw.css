@@ -1,0 +1,95 @@
+.find-idpw-wrapper{
+    width: 500px;
+    margin: 0 auto;
+    padding: 130px 0;
+    font-family: sans-serif;
+    text-align: center;
+}
+
+.tab-header {
+    display: flex;
+    background-color: white;
+}
+
+.tab-header button {
+    flex: 1;
+    padding: 10px;
+    color: black;
+    border: none;
+    cursor: pointer;
+    background-color: white;
+}
+
+.tab-header button.active-tab {
+    border-top: 1px solid #334155;
+    border-right: 1px solid #334155;
+    border-left: 1px solid #334155;
+    font-weight: 500;
+}
+
+.tab-content {
+    height: auto;
+    gap: 100px;
+    border: 1px solid #334155;
+    padding: 30px 50px;
+}
+
+.f-idpw-userid {
+    font-weight: bold;
+    font-size: 1.2rem;
+    margin-top: 8px;
+    color: #6366f1;
+}
+
+.reset-pw-button {
+    width: 100%;
+    background-color: #6366f1;
+    border: none;
+    cursor: pointer;
+    color: white;
+    padding: 12px;
+    font-weight: bold;
+    font-size: 16px;
+    margin: 16px 0;
+}
+
+
+.overlay-spinner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(255, 255, 255, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.spinner-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 6px solid #ccc;
+    border-top: 6px solid #1976d2;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.spinner-text {
+    font-size: 16px;
+    color: #333;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

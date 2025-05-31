@@ -68,6 +68,10 @@
     margin: 16px 0;
 }
 
+.signup-button:hover {
+    background-color: #4f46e5
+}
+
 .link-row {
     font-size: 12px;
     color: #666;

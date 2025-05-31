@@ -1,6 +1,6 @@
 // src/components/Navbar.tsx
 import React, {useEffect, useRef, useState} from 'react'
-import {useLocation, useNavigate} from 'react-router-dom';
+import {useLocation, useNavigate, useSearchParams} from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircleUser, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
 import {signout} from '../../../api/auth'
@@ -17,6 +17,8 @@ const Navbar: React.FC<Props> = ({ userId, activeTab, activeTabHandler }) => {
     const [scrolled, setScrolled] = useState(false);
     const [placeholder, setPlaceholder] = useState('검색어를 입력하세요');
     const [showDropdown, setShowDropdown] = useState(false);
+    const [searchInput, setSearchInput] = useState('');
+    const [searchParams] = useSearchParams();
 
     const dropdownRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
@@ -75,13 +77,24 @@ const Navbar: React.FC<Props> = ({ userId, activeTab, activeTabHandler }) => {
         };
     }, [showDropdown]);
 
+    useEffect(() => {
+        const isSearchPage = location.pathname === '/search';
 
-    const searchHandler = ( isClick: boolean ) => {
-        if(isClick)
-            setPlaceholder("기업명, 키워드, 직무를 검색해보세요")
-        else
-            setPlaceholder("검색어를 입력하세요");
-    }
+        if (isSearchPage) {
+            const query = searchParams.get('query') || '';
+            setSearchInput(query);
+        } else {
+            setSearchInput('');
+        }
+    }, [location.pathname, searchParams]);
+
+
+    const searchHandler = () => {
+        const trimmed = searchInput.trim();
+        if (trimmed) {
+            navigate(`/search?query=${encodeURIComponent(trimmed)}`);
+        }
+    };
 
     return (
         <nav className="navbar-wrapper">
@@ -129,10 +142,18 @@ const Navbar: React.FC<Props> = ({ userId, activeTab, activeTabHandler }) => {
                     </li>
                 </ul>
                 <div className={`search-container ${scrolled ? 'scrolled' : ''}`}>
-                    <input type="text" placeholder={placeholder}
-                           onClick={() => searchHandler(true)}
-                           onBlur={() => searchHandler(false)}/>
-                    <button className="search-button">
+                    <input
+                        type="text"
+                        placeholder={placeholder}
+                        value={searchInput}
+                        onChange={(e) => setSearchInput(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') searchHandler();
+                        }}
+                        onClick={() => setPlaceholder("기업명, 키워드, 직무를 검색해보세요")}
+                        onBlur={() => setPlaceholder("검색어를 입력하세요")}
+                    />
+                    <button className="search-button" onClick={searchHandler}>
                         <FontAwesomeIcon icon={faMagnifyingGlass}/>
                     </button>
                 </div>

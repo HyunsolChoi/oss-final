@@ -11,9 +11,10 @@ import Footer from "../utils/Footer/Footer";
 interface Props {
     userId: string;
     setUserId: (id: string) => void;
+    checkToken: () =>  string | undefined;
 }
 
-const Signin: React.FC<Props> = ({ userId, setUserId }) => {
+const Signin: React.FC<Props> = ({ userId, setUserId, checkToken }) => {
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [saveId, setSaveId] = useState(false);
@@ -53,7 +54,6 @@ const Signin: React.FC<Props> = ({ userId, setUserId }) => {
                         localStorage.removeItem('careerfit-id');
                     }
 
-                    toast.success('로그인 성공!');
                     navigate('/');
                 } else if (result && 'message' in result) {
                     toast.error(result.message);
@@ -74,14 +74,23 @@ const Signin: React.FC<Props> = ({ userId, setUserId }) => {
         }
     }, [setUserId]);
 
+    useEffect(() => {
+        const validToken = checkToken();
+        
+        if(validToken){ // 로그인 되어있으면 로그인 페이지 접근불가 하도록
+            navigate('/');
+            return;
+        }
+    }, [checkToken, navigate]);
+
     return (
         <div className="wrapper-footer">
             <div className="login-wrapper">
                 <h2>로그인</h2>
                 <form
-                    onSubmit={(e) => {
+                    onSubmit={async (e) => {
                         e.preventDefault(); // 기본 폼 제출 방지
-                        signHandler(); // 로그인 실행
+                        await signHandler(); // 로그인 실행
                     }}
                 >
                     <div className="input-group">
@@ -121,9 +130,10 @@ const Signin: React.FC<Props> = ({ userId, setUserId }) => {
                     <button type="submit" className="login-button">로그인</button>
 
                     <div className="link-row">
-                        <a href="#">아이디 찾기</a>
+                        <a href="/find_idpw?tab=1">아이디 찾기</a>
+                        {/* todo : 아이디 찾기 비밀번호 재설정 만들어야함 */}
                         <span>|</span>
-                        <a href="#">비밀번호 재설정</a>
+                        <a href="/find_idpw?tab=2">비밀번호 재설정</a>
                         <span>|</span>
                         <a href="/agreement">회원가입</a>
                     </div>

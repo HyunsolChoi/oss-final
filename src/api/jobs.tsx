@@ -42,5 +42,35 @@ export async function getMyJobs(userId: string): Promise<Job[]> {
     return (await res.json() as Promise<Job[]>)
 }
 
+export async function getSearchResult(query: string): Promise<Job[]> {
+    const res = await fetch('/api/jobs/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: query.trim() }),
+    });
 
+    if (!res.ok) throw new Error('검색 결과 요청 실패');
 
+    return await res.json() as Promise<Job[]>;
+}
+
+// 공고 조회 (consulting)
+export async function getJobInfo(jobId: number): Promise<Job> {
+    const res = await fetch('/api/jobs/jobinfo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobId }),
+    });
+
+    if (!res.ok) {
+        throw new Error('공고 상세 정보를 불러오지 못했습니다');
+    }
+
+    const result = await res.json();
+
+    if (!result.success || !result.job) {
+        throw new Error(result.message || '공고 정보를 찾을 수 없습니다');
+    }
+
+    return result.job as Job;
+}
