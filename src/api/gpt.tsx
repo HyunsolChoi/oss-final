@@ -3,7 +3,9 @@ import { Job } from './jobs'
 // 컨설팅 정보 요청
 export async function getConsulting(userId: string, job: Job): Promise<{
     success: boolean;
-    gptOutput?: string;
+    gptSummary?: string;
+    gptFit?: string;
+    gptGap?: string;
     message?: string;
 }> {
     try {
@@ -17,11 +19,13 @@ export async function getConsulting(userId: string, job: Job): Promise<{
 
         return {
             success: result.success,
-            gptOutput: result.gptOutput,
-            message: result.message,
+            gptSummary: result.summary,
+            gptFit: result.fit,
+            gptGap: result.gap,
+            message: result.message
         };
     } catch (error) {
         console.error('컨설팅 요청 실패:', error);
-        return { success: false, message: '서버와의 통신 중 오류 발생' };
+        return { success: false, message: '서버와의 통신 중 오류 발생'};
     }
 }
