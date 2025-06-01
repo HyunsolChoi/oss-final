@@ -8,5 +8,6 @@ router.get('/entry',   ctrl.getEntryLevelJobs);
 router.post('/myjobs',   ctrl.getMyJobs);
 router.post('/search', ctrl.searchJobs);
 router.post('/jobinfo', ctrl.getJobInfo);
+router.post('/region', ctrl.getJobsByRegion);
 
 module.exports = router;

@@ -288,3 +288,44 @@ exports.getJobInfo = async (req, res) => {
         return res.status(500).json({ success: false, message: '서버 오류' });
     }
 };
+
+
+/**
+ * 지역별 채용공고 조회
+ */
+exports.getJobsByRegion = async (req, res) => {
+    const { region } = req.body;
+
+    if (!region) {
+        return res.status(400).json({ error: '지역 정보가 필요합니다' });
+    }
+
+    try {
+        const query = `
+            SELECT DISTINCT
+                j.job_posting_id AS id,
+                c.company_name AS company,
+                j.title,
+                j.link,
+                j.views,
+                GROUP_CONCAT(DISTINCT l.location_name SEPARATOR ', ') AS location,
+                GROUP_CONCAT(DISTINCT s.sector_name SEPARATOR ', ') AS sectors,
+                j.deadline
+            FROM job_postings j
+            JOIN companies c ON j.company_id = c.company_id
+            JOIN job_posting_locations jpl ON j.job_posting_id = jpl.job_posting_id
+            JOIN locations l ON jpl.location_id = l.location_id
+            LEFT JOIN job_posting_sectors jps ON j.job_posting_id = jps.job_posting_id
+            LEFT JOIN sectors s ON jps.sector_id = s.sector_id
+            WHERE l.location_name LIKE ?
+            GROUP BY j.job_posting_id
+            ORDER BY j.views DESC
+        `;
+
+        const [rows] = await executeQuery(query, [`%${region}%`]);
+        res.json(rows);
+    } catch (err) {
+        console.error('getJobsByRegion 오류:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+};
