@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {useNavigate, useParams} from "react-router-dom";
 import './Consulting.css';
-import {getConsulting, generateQuestions } from '../../api/gpt';
+import {getConsulting} from '../../api/gpt';
 import {toast} from "react-toastify";
 import {getJobInfo} from "../../api/jobs";
 

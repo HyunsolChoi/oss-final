@@ -5,38 +5,46 @@ const APIKEY = process.env.OPENAI_API_KEY;
 // GET DB에서 user정보
 async function getUserInfo(userId){
     try{
-        const [userResult, skillsRows, regionRows, educationRows] = await executeTransaction([
+        const [userResult, skillsRows, regionRows, educationRows, gptRows] = await executeTransaction([
                 {
                     query: `SELECT sector FROM users WHERE user_id = ?`,
                     params: [userId],
                 },
                 {
                     query: `
-                SELECT s.name
-                FROM user_skills us
-                JOIN skills s ON us.skill_id = s.skill_id
-                WHERE us.user_id = ?
-            `,
+                        SELECT s.name
+                        FROM user_skills us
+                        JOIN skills s ON us.skill_id = s.skill_id
+                        WHERE us.user_id = ?
+                    `,
                     params: [userId],
                 },
                 {
                     query: `
-                SELECT ul.location_name
-                FROM user_location_mapping ulm
-                JOIN user_locations ul ON ulm.location_id = ul.location_id
-                WHERE ulm.user_id = ?
-            `,
+                        SELECT ul.location_name
+                        FROM user_location_mapping ulm
+                        JOIN user_locations ul ON ulm.location_id = ul.location_id
+                        WHERE ulm.user_id = ?
+                    `,
                     params: [userId],
                 },
                 {
                     query: `
-                SELECT ue.education_name
-                FROM user_educations_mapping uem
-                JOIN user_educations ue ON uem.user_education_id = ue.user_education_id
-                WHERE uem.user_id = ?
-            `,
+                        SELECT ue.education_name
+                        FROM user_educations_mapping uem
+                        JOIN user_educations ue ON uem.user_education_id = ue.user_education_id
+                        WHERE uem.user_id = ?
+                    `,
                     params: [userId],
                 },
+                {
+                    query: `
+                          SELECT ug.gpt_question, ug.user_answer
+                          FROM user_gpt ug
+                          WHERE ug.user_id = ?
+                    `,
+                    params: [userId],
+                }
         ]);
         const user = userResult[0];
 
@@ -44,8 +52,10 @@ async function getUserInfo(userId){
         const skills = skillsRows.map(r => r.name);
         const regions = regionRows.map(r => r.location_name);
         const educations = educationRows.map(r => r.education_name);
+        const gpt_questions = gptRows.map(r => r.gpt_question);
+        const user_answers = gptRows.map(r => r.user_answer);
 
-        return [user, skills, regions, educations];
+        return [user, skills, regions, educations, gpt_questions, user_answers];
     } catch (err){
         console.error("[ERROR] getUserInfo", err);
         throw err;
@@ -110,12 +120,12 @@ async function summaryAgent(job) {
 
   // JSON을 문자열로 변환하여 프롬프트에 전달
   const userPrompt = `
-        {
-            jobPostingTItle: ${job.title},
-            companyName: ${job.company},
-            desireEducation: ${job.education},
-            employmentType: ${job.employmentType},
-            sector: ${job.sectors}
+        "jobInfo": {
+            "jobPostingTItle": ${job.title},
+            "companyName": ${job.company},
+            "desireEducation": ${job.education},
+            "employmentType": ${job.employmentType},
+            "sector": ${job.sectors}
         }
   `;
 
@@ -123,7 +133,7 @@ async function summaryAgent(job) {
 }
 
 // AGENT 사용자 적합도 확인
-async function fitAgent(job, sector, skills, regions, educations) {
+async function fitAgent(job, sector, skills, regions, educations, gpt_questions, user_answer) {
   const systemPrompt = `
   너는 경력 적합도를 판단하는 컨설팅 전문가야.
     아래 두 JSON을 비교해서,
@@ -150,27 +160,46 @@ async function fitAgent(job, sector, skills, regions, educations) {
     `;
 
   const userPrompt = `
-    jobInfo = {
-        jobPostingTItle: ${job.title},
-        companyName: ${job.company},
-        desireEducation: ${job.education},
-        employmentType: ${job.employmentType},
-        sector: ${job.sectors}
+    "jobInfo" : {
+        "jobPostingTItle": ${job.title},
+        "companyName": ${job.company},
+        "desireEducation": ${job.education},
+        "employmentType": ${job.employmentType},
+        "sector": ${job.sectors}
     },
 
-    userInfo = {
-        desireSector: ${sector}
-        education: ${educations.join(', ') || '정보 없음'}
-        desireLocation: ${regions.join(', ') || '정보 없음'}
-        skills: ${skills.join(', ') || '정보 없음'}
-    }
-  `;
+    "userInfo" : {
+        "desireSector": ${sector}
+        "education": ${educations.join(', ') || '정보 없음'}
+        "desireLocation": ${regions.join(', ') || '정보 없음'}
+        "skills": ${skills.join(', ') || '정보 없음'}
+    },
+
+    "userQandA": [
+        {
+          "question": ${gpt_questions[0]},
+          "answer": ${user_answer[0]}
+        },
+        {
+          "question": ${gpt_questions[1]},
+          "answer": ${user_answer[1]}
+        },
+        {
+          "question": ${gpt_questions[2]},
+          "answer": ${user_answer[2]}
+        },
+        {
+          "question": ${gpt_questions[3]},
+          "answer": ${user_answer[3]}
+        }
+      ]
+    `;
 
   return await callGPT(systemPrompt, userPrompt);
 }
 
 // AGENT 사용자와 채용 차이 비교
-async function gapAgent(job, sector, skills, regions, educations) {
+async function gapAgent(job, sector, skills, regions, educations, gpt_questions, user_answer) {
     const systemPrompt = `
         너는 사용자 정보와 채용공고의 내용을 비교하고 각 내용들을 바탕으로 사용자에게 조언을 해주는 컨설팅 전문가야.
         아래 두 JSON을 기반으로, 사용자가 해당 포지션을 준비할 때
@@ -180,35 +209,52 @@ async function gapAgent(job, sector, skills, regions, educations) {
         를 리스트 형식으로 뽑아서 한국어로 알려줘.`;
 
     const userPrompt = `
-        jobInfo = {
-                jobPostingTItle: ${job.title},
-                companyName: ${job.company},
-                desireEducation: ${job.education},
-                employmentType: ${job.employmentType},
-                sector: ${job.sectors}
+        "jobInfo" :{
+                "jobPostingTItle": ${job.title},
+                "companyName": ${job.company},
+                "desireEducation": ${job.education},
+                "employmentType": ${job.employmentType},
+                "sector": ${job.sectors}
             },
 
-            userInfo = {
-                desireSector: ${sector}
-                education: ${educations.join(', ') || '정보 없음'}
-                desireLocation: ${regions.join(', ') || '정보 없음'}
-                skills: ${skills.join(', ') || '정보 없음'}
+        "userInfo" : {
+            "desireSector": ${sector}
+            "education": ${educations.join(', ') || '정보 없음'}
+            "desireLocation": ${regions.join(', ') || '정보 없음'}
+            "skills": ${skills.join(', ') || '정보 없음'}
+        },
+
+         "userQandA": [
+            {
+              "question": ${gpt_questions[0]},
+              "answer": ${user_answer[0]}
+            },
+            {
+              "question": ${gpt_questions[1]},
+              "answer": ${user_answer[1]}
+            },
+            {
+              "question": ${gpt_questions[2]},
+              "answer": ${user_answer[2]}
+            },
+            {
+              "question": ${gpt_questions[3]},
+              "answer": ${user_answer[3]}
             }
-      `;
-
-
+          ]
+    `;
 
   return await callGPT(systemPrompt, userPrompt);
 }
 
 // REQUEST Multi agent 응답
-async function reqMultiAgent(sector, skills, regions, educations, job){
+async function reqMultiAgent(sector, skills, regions, educations, gpt_questions, user_answer, job){
     try {
         // 3개 에이전트 동시에 호출
         const [summaryResult, fitResult, gapResult] = await Promise.all([
           summaryAgent(job),
-          fitAgent(job, sector, skills, regions, educations),
-          gapAgent(job, sector, skills, regions, educations),
+          fitAgent(job, sector, skills, regions, educations, gpt_questions, user_answer),
+          gapAgent(job, sector, skills, regions, educations, gpt_questions, user_answer),
         ]);
 
         return {
@@ -283,10 +329,10 @@ exports.getConsultingContext = async (req, res) => {
 
     try {
         //GET 유저 정보
-        const [user, skills, regions, educations] = await getUserInfo(userId);
+        const [user, skills, regions, educations, gpt_questions, user_answer] = await getUserInfo(userId);
 
         //OUTPUT gpt 에이전트 답변들
-        const { summary, fit, gap } = await reqMultiAgent(user.sector, skills, regions, educations, job);
+        const { summary, fit, gap } = await reqMultiAgent(user.sector, skills, regions, educations, gpt_questions, user_answer, job);
 
         return res.json({
             success: true,
@@ -330,7 +376,8 @@ exports.generateGPTQuestions = async (req, res) => {
     }
 };
 
-// 질문과 답변 저장 API
+// 현재는 사용되진 않는 API
+// 질문과 답변 저장 API => 혹시라도 질문 더 만다는 기능 추가로 활용 가능
 exports.saveQuestionsAndAnswers = async (req, res) => {
     const { userId, questions, answers } = req.body;
 
@@ -342,40 +389,21 @@ exports.saveQuestionsAndAnswers = async (req, res) => {
     }
 
     try {
-        const queries = [];
-
         // 각 질문과 답변을 저장
+        const queries = [];
         for (let i = 0; i < questions.length; i++) {
             // 질문 저장
-            queries.push({
-                query: `INSERT INTO gpt_questions (user_id, question_text, question_order) VALUES (?, ?, ?)`,
-                params: [userId, questions[i], i + 1]
-            });
-        }
-
-        // 트랜잭션으로 질문들 먼저 저장
-        const questionResults = await executeTransaction(queries);
-
-        // 저장된 질문들의 ID 가져오기
-        const [questionRows] = await executeQuery(
-            `SELECT question_id FROM gpt_questions WHERE user_id = ? ORDER BY question_order`,
-            [userId]
-        );
-
-        // 답변 저장 쿼리 생성
-        const answerQueries = [];
-        for (let i = 0; i < answers.length; i++) {
-            if (questionRows[i] && answers[i].trim()) {
-                answerQueries.push({
-                    query: `INSERT INTO user_answers (user_id, question_id, answer_text) VALUES (?, ?, ?)`,
-                    params: [userId, questionRows[i].question_id, answers[i].trim()]
+            if(questions[i].trim() && answers[i].trim()){
+                queries.push({
+                    query: `INSERT INTO user_gpt (user_id, gpt_question, user_answers) VALUES (?, ?, ?)`,
+                    params: [userId, questions[i].trim(), answers[i].trim()]
                 });
             }
         }
 
         // 답변 저장
-        if (answerQueries.length > 0) {
-            await executeTransaction(answerQueries);
+        if (queries.length > 0) {
+            await executeTransaction(queries);
         }
 
         return res.json({
