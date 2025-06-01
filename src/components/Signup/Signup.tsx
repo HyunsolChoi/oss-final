@@ -3,44 +3,35 @@ import './Signup.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser, faLock, faBriefcase, faLightbulb, faPaperPlane, faQuestionCircle  } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'react-toastify';
-import { checkDuplicateId, signup } from '../../api/auth'
+import { checkDuplicateId, signup } from '../../api/auth';
+import { generateQuestions } from '../../api/gpt';
 import {useNavigate} from "react-router-dom";
-
 
 interface Props {
     email: string;
 }
 
-interface GPTQuestion{
-    id: number;
-    question: string;
-}
-
 const Signup: React.FC<Props> = ({ email }) => {
-      // 1. 페이지 단계 관리 (1~3단계)
-      // pageStep === 1 → 아이디/비번 입력
-      // pageStep === 2 → 학력/지역/직무/기술 입력
-      // pageStep === 3 → GPT 질문 & 사용자 답변 입력
-      const [pageStep, setPageStep] = useState<number>(1);
+    // 1. 페이지 단계 관리 (1~3단계)
+    const [pageStep, setPageStep] = useState<number>(1);
 
-      // 2. 1단계 상태 (아이디/비밀번호)
-      const [userId, setUserId] = useState('');
-      const [password, setPassword] = useState('');
-      const [showPassword, setShowPassword] = useState(false);
-      const [confirmPassword, setConfirmPassword] = useState('');
+    // 2. 1단계 상태 (아이디/비밀번호)
+    const [userId, setUserId] = useState('');
+    const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [confirmPassword, setConfirmPassword] = useState('');
 
-      // 3. 2단계 상태 (학력/지역/직무/기술)
-      const [education, setEducation] = useState('');
-      const [region, setRegion] = useState('');
-      const [job, setJob] = useState('');
-      const [skills, setSkills] = useState<string[]>(['']);
-      const [trimmedSkills, setTrimmedSkills] = useState<string[]>([]);
+    // 3. 2단계 상태 (학력/지역/직무/기술)
+    const [education, setEducation] = useState('');
+    const [region, setRegion] = useState('');
+    const [job, setJob] = useState('');
+    const [skills, setSkills] = useState<string[]>(['']);
+    const [trimmedSkills, setTrimmedSkills] = useState<string[]>([]);
 
-      // 4. 3단계 상태 (질문 4개 + 각 질문별 답변)
-      const [questions, setQuestions] = useState<GPTQuestion[]>([]);
-      const [answers, setAnswers] = useState<string[]>([]); // 질문 개수만큼 답변 저장
-      const [loadingQuestions, setLoadingQuestions] = useState(false);
-
+    // 4. 3단계 상태 (질문 4개 + 각 질문별 답변)
+    const [questions, setQuestions] = useState<string[]>([]);
+    const [answers, setAnswers] = useState<string[]>(['', '', '', '']);
+    const [loadingQuestions, setLoadingQuestions] = useState(false);
 
     const navigate = useNavigate();
 
@@ -80,14 +71,19 @@ const Signup: React.FC<Props> = ({ email }) => {
         return regex.test(text);
     };
 
-
     const hasDuplicateSkills = (skills: string[]): boolean => {
         const trimmed = skills.map(s => s.trim()).filter(s => s !== '');
         const unique = new Set(trimmed);
         return unique.size !== trimmed.length;
     };
 
-    const signupComplete = async () =>{
+    const signupComplete = async () => {
+        // 모든 답변이 입력되었는지 확인
+        const filledAnswers = answers.filter(a => a.trim() !== '');
+        if (filledAnswers.length !== questions.length) {
+            toast.error('모든 질문에 답변해주세요');
+            return;
+        }
 
         try {
             const result = await signup({
@@ -98,6 +94,8 @@ const Signup: React.FC<Props> = ({ email }) => {
                 education,
                 region,
                 skills: trimmedSkills,
+                questions,
+                answers
             });
 
             if (result.success) {
@@ -109,14 +107,9 @@ const Signup: React.FC<Props> = ({ email }) => {
         } catch (err: any) {
             toast.error(err.message || "회원가입 중 오류 발생");
         }
-    }
+    };
 
     const checkValidUserKeyword = async () => {
-        if(!isValidUserId(userId) || !isValidPwd(password) || userId===password){
-            toast.error("유효하지 않은 아이디와 비밀번호 입니다")
-            return;
-        }
-
         if (!job.trim()) {
             toast.error("직무를 입력해주세요");
             return;
@@ -132,9 +125,10 @@ const Signup: React.FC<Props> = ({ email }) => {
             return;
         }
 
-        setTrimmedSkills(skills.map(s => s.trim()).filter(s => s !== ''));
+        const trimmed = skills.map(s => s.trim()).filter(s => s !== '');
+        setTrimmedSkills(trimmed);
 
-        if (trimmedSkills.length === 0) {
+        if (trimmed.length === 0) {
             toast.error("하나 이상의 기술을 입력해주세요");
             return;
         }
@@ -144,7 +138,7 @@ const Signup: React.FC<Props> = ({ email }) => {
             return;
         }
 
-        for (const skill of trimmedSkills) {
+        for (const skill of trimmed) {
             if (skill.length > 20) {
                 toast.error(`기술 '${skill}'은 20글자 이하로 입력해주세요`);
                 return;
@@ -156,8 +150,29 @@ const Signup: React.FC<Props> = ({ email }) => {
             }
         }
 
-        setPageStep(3);
-    }
+        // GPT 질문 생성
+        setLoadingQuestions(true);
+        try {
+            const result = await generateQuestions({
+                job: job.trim(),
+                skills: trimmed,
+                education,
+                region
+            });
+
+            if (result.success && result.questions) {
+                setQuestions(result.questions);
+                setAnswers(new Array(result.questions.length).fill(''));
+                setPageStep(3);
+            } else {
+                toast.error(result.message || '질문 생성에 실패했습니다');
+            }
+        } catch (error) {
+            toast.error('질문 생성 중 오류가 발생했습니다');
+        } finally {
+            setLoadingQuestions(false);
+        }
+    };
 
     const checkValidIdPwd = async () => {
         if (!userId || !password || !confirmPassword) {
@@ -170,6 +185,10 @@ const Signup: React.FC<Props> = ({ email }) => {
         }
         if (!isValidPwd(password)) {
             toast.error("비밀번호는 영문자, 숫자 및 특수문자(!, @) 8~15자여야 합니다");
+            return;
+        }
+        if (password !== confirmPassword) {
+            toast.error("비밀번호가 일치하지 않습니다");
             return;
         }
         if (userId === password) {
@@ -191,7 +210,6 @@ const Signup: React.FC<Props> = ({ email }) => {
         setPageStep(2);
     };
 
-
     useEffect(() => {
         const cookies = document.cookie
             .split(';')
@@ -205,13 +223,10 @@ const Signup: React.FC<Props> = ({ email }) => {
         );
 
         if (!hasAgreement || !hasEmailVerified) {
-            // 약관 동의가 없으면 동의 페이지로
-            toast.error("세션이 만료되어 동의 페이지로 이동합니다")
+            toast.error("세션이 만료되어 동의 페이지로 이동합니다");
             navigate('/agreement');
         }
-
     }, [navigate]);
-
 
     return (
         <div className="signup-wrapper">
@@ -220,7 +235,6 @@ const Signup: React.FC<Props> = ({ email }) => {
             {/*─────────── 1단계: 아이디/비밀번호 입력 ───────────*/}
             {pageStep === 1 && (
                 <>
-                    {/* 아이디, 비밀번호 입력 단계 */}
                     <div className="input-group">
                         <FontAwesomeIcon icon={faUser} className="input-icon"/>
                         <input
@@ -268,9 +282,8 @@ const Signup: React.FC<Props> = ({ email }) => {
             )}
 
             {/*─────────── 2단계: 학력/지역/직무/기술 입력 ───────────*/}
-            {pageStep === 2 && (
+            {pageStep === 2 && !loadingQuestions && (
                 <>
-                    {/* 직무 및 기술 입력 단계 */}
                     <div className="input-description">
                         최종 학력을 선택해주세요
                     </div>
@@ -319,7 +332,6 @@ const Signup: React.FC<Props> = ({ email }) => {
                             <option value="제주특별자치도">제주특별자치도</option>
                         </select>
                     </div>
-
 
                     <div className="input-description">
                         <span className="pointer">*</span> 예: 백엔드, 재무회계, 세무사 등 (개발자, 담당자 등의 키워드 제외)
@@ -375,92 +387,93 @@ const Signup: React.FC<Props> = ({ email }) => {
                         <button
                             className="signup-button"
                             style={{flex: 1}}
-                            onClick={() => {
+                            onClick={async () => {
                                 if (!job || skills.filter(s => s.trim() !== '').length === 0 || !education || !region) {
                                     toast.error("모든 항목을 입력해주세요.");
                                     return;
                                 }
-                                // 가입 완료 처리
-                                checkValidUserKeyword();
+                                await checkValidUserKeyword();
                             }}
+                            disabled={loadingQuestions}
                         >
-                            다음
+                            {loadingQuestions ? '질문 생성 중...' : '다음'}
                         </button>
                     </div>
                 </>
             )}
 
+            {/* 로딩 화면 */}
+            {loadingQuestions && (
+                <div className="loading-screen">
+                    <FontAwesomeIcon
+                        icon={faQuestionCircle}
+                        size="3x"
+                        style={{
+                            color: '#6366f1',
+                            animation: 'spin 2s linear infinite'
+                        }}
+                    />
+                    <p>잠시만 기다려주세요... 질문을 생성 중입니다.</p>
+                </div>
+            )}
+
             {/*─────────── 3단계: 질문 생성 & 답변 입력 ───────────*/}
-            {pageStep === 3 && (
-
+            {pageStep === 3 && !loadingQuestions && (
                 <>
-                  {loadingQuestions ? (
-                    // 질문 생성 중 표시되는 로딩 화면
-                    <div className="loading-screen">
-                      <FontAwesomeIcon icon={faQuestionCircle} spin size="3x" />
-                      <p>잠시만 기다려주세요... 질문을 생성 중입니다.</p>
-                    </div>
-                  ) : (
-                    // 질문이 생성된 뒤 실제 질문과 답변 입력 폼 화면
                     <div>
-                      <div className="input-description">
-                        <FontAwesomeIcon icon={faQuestionCircle} className="input-icon" />
-                        아래 질문에 대해 답변해 주세요
-                      </div>
-
-                      {/* questions 배열을 순회하며, 번호와 함께 질문 출력, 입력란 제공 */}
-                      {questions.map((q, idx) => (
-                        <div className="input-group" key={q.id}>
-                          <label className="question-label">
-                            {idx + 1}. {q.question}
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="답변을 입력하세요"
-                            value={answers[idx] || ''}
-                            onChange={(e) => {
-                              const newAnswers = [...answers];
-                              newAnswers[idx] = e.target.value;
-                              setAnswers(newAnswers);
-                            }}
-                          />
+                        <div className="input-description">
+                            <FontAwesomeIcon icon={faQuestionCircle} className="input-icon" />
+                            아래 질문에 대해 답변해 주세요
                         </div>
-                      ))}
 
-                      <div
-                        style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}
-                      >
-                        <button
-                          className="signup-button"
-                          style={{ flex: 1 }}
-                          onClick={() => setPageStep(2)} // 🔙 이전 단계로 전환
-                        >
-                          이전
-                        </button>
-                        <button
-                            className="signup-button"
-                            style={{flex: 3}}
-                            // TODO: 클릭 이벤트 변경 해야함.
-                            onClick={() => {
-                                if (!job || skills.filter(s => s.trim() !== '').length === 0 || !education || !region) {
-                                    toast.error("모든 항목을 입력해주세요.");
-                                    return;
-                                }
-                                // 가입 완료 처리
-                                signupComplete();
-                            }}
-                        >
-                            가입 완료
-                            <FontAwesomeIcon icon={faPaperPlane} style={{ marginLeft: '6px' }}/>
-                        </button>
-                      </div>
+                        {questions.map((question, idx) => (
+                            <div key={idx} style={{ marginBottom: '20px' }}>
+                                <label className="question-label" style={{
+                                    display: 'block',
+                                    marginBottom: '8px',
+                                    fontWeight: 'bold',
+                                    color: '#333'
+                                }}>
+                                    {idx + 1}. {question}
+                                </label>
+                                <div className="input-group">
+                                    <input
+                                        type="text"
+                                        placeholder="답변을 입력하세요"
+                                        value={answers[idx] || ''}
+                                        onChange={(e) => {
+                                            const newAnswers = [...answers];
+                                            newAnswers[idx] = e.target.value;
+                                            setAnswers(newAnswers);
+                                        }}
+                                        style={{ paddingLeft: '12px' }}
+                                    />
+                                </div>
+                            </div>
+                        ))}
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
+                            <button
+                                className="signup-button"
+                                style={{ flex: 1 }}
+                                onClick={() => setPageStep(2)} // 🔙 이전 단계로 전환
+                            >
+                                이전
+                            </button>
+                            <button
+                                className="signup-button"
+                                style={{flex: 3}}
+                                onClick={() => signupComplete()}
+                            >
+                                가입 완료
+                                <FontAwesomeIcon icon={faPaperPlane} style={{ marginLeft: '6px' }}/>
+                            </button>
+                        </div>
                     </div>
-                  )}
                 </>
             )}
         </div>
     );
-
 };
 
 export default Signup;

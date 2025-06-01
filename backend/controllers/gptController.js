@@ -1,4 +1,4 @@
-const { executeTransaction } = require('../Utils/executeDB');
+const { executeQuery, executeTransaction } = require('../Utils/executeDB');
 
 const APIKEY = process.env.OPENAI_API_KEY;
 
@@ -222,7 +222,58 @@ async function reqMultiAgent(sector, skills, regions, educations, job){
     }
 }
 
-// MAIN 컨설팅 함수
+// GPT 질문 생성 함수
+async function generateQuestions(job, skills, education, region) {
+    const systemPrompt = `
+        너는 채용 면접관이자 커리어 컨설턴트야.
+        지원자의 정보를 바탕으로 그들의 역량과 목표를 파악하기 위한 4개의 질문을 만들어줘.
+
+        질문 조건:
+        1. 각 질문은 지원자의 배경과 관련이 있어야 함
+        2. 개인의 강점, 목표, 경험, 발전 가능성을 파악할 수 있는 질문
+        3. 너무 개인적이거나 불편한 질문은 피할 것
+        4. 각 질문은 간결하고 명확해야 함
+
+        반드시 다음 JSON 형식으로만 응답해줘:
+        {
+            "questions": [
+                "질문1",
+                "질문2",
+                "질문3",
+                "질문4"
+            ]
+        }
+    `;
+
+    const userPrompt = `
+        지원자 정보:
+        - 희망 직무: ${job}
+        - 보유 기술: ${skills.join(', ')}
+        - 학력: ${education}
+        - 희망 지역: ${region}
+
+        이 정보를 바탕으로 지원자의 역량과 적합성을 파악할 수 있는 4개의 질문을 만들어주세요.
+    `;
+
+    try {
+        const response = await callGPT(systemPrompt, userPrompt);
+        const parsed = JSON.parse(response);
+        return parsed.questions || [];
+    } catch (error) {
+        console.error('질문 생성 파싱 오류:', error);
+        // 파싱 실패 시 기본 질문 반환
+        return [
+            `${job} 직무를 선택하게 된 계기는 무엇인가요?`,
+            `본인의 강점 중 ${job} 직무에 가장 도움이 될 것은 무엇인가요?`,
+            `향후 3년 내 달성하고 싶은 커리어 목표는 무엇인가요?`,
+            `${job} 분야에서 가장 관심 있는 기술이나 트렌드는 무엇인가요?`
+        ];
+    }
+}
+
+
+//-----------------exports 함수들-----------------------
+// GET 컨설팅
 exports.getConsultingContext = async (req, res) => {
     const { userId, job } = req.body;
 
@@ -249,3 +300,93 @@ exports.getConsultingContext = async (req, res) => {
         return '';
     }
 }
+
+
+
+// 질문 생성 API
+exports.generateGPTQuestions = async (req, res) => {
+    const { job, skills, education, region } = req.body;
+
+    if (!job || !skills || !education || !region) {
+        return res.status(400).json({
+            success: false,
+            message: '모든 정보가 필요합니다'
+        });
+    }
+
+    try {
+        const questions = await generateQuestions(job, skills, education, region);
+
+        return res.json({
+            success: true,
+            questions
+        });
+    } catch (error) {
+        console.error('GPT 질문 생성 오류:', error);
+        return res.status(500).json({
+            success: false,
+            message: '질문 생성 중 오류가 발생했습니다'
+        });
+    }
+};
+
+// 질문과 답변 저장 API
+exports.saveQuestionsAndAnswers = async (req, res) => {
+    const { userId, questions, answers } = req.body;
+
+    if (!userId || !questions || !answers || questions.length !== answers.length) {
+        return res.status(400).json({
+            success: false,
+            message: '유효하지 않은 데이터입니다'
+        });
+    }
+
+    try {
+        const queries = [];
+
+        // 각 질문과 답변을 저장
+        for (let i = 0; i < questions.length; i++) {
+            // 질문 저장
+            queries.push({
+                query: `INSERT INTO gpt_questions (user_id, question_text, question_order) VALUES (?, ?, ?)`,
+                params: [userId, questions[i], i + 1]
+            });
+        }
+
+        // 트랜잭션으로 질문들 먼저 저장
+        const questionResults = await executeTransaction(queries);
+
+        // 저장된 질문들의 ID 가져오기
+        const [questionRows] = await executeQuery(
+            `SELECT question_id FROM gpt_questions WHERE user_id = ? ORDER BY question_order`,
+            [userId]
+        );
+
+        // 답변 저장 쿼리 생성
+        const answerQueries = [];
+        for (let i = 0; i < answers.length; i++) {
+            if (questionRows[i] && answers[i].trim()) {
+                answerQueries.push({
+                    query: `INSERT INTO user_answers (user_id, question_id, answer_text) VALUES (?, ?, ?)`,
+                    params: [userId, questionRows[i].question_id, answers[i].trim()]
+                });
+            }
+        }
+
+        // 답변 저장
+        if (answerQueries.length > 0) {
+            await executeTransaction(answerQueries);
+        }
+
+        return res.json({
+            success: true,
+            message: '질문과 답변이 저장되었습니다'
+        });
+    } catch (error) {
+        console.error('질문/답변 저장 오류:', error);
+        return res.status(500).json({
+            success: false,
+            message: '저장 중 오류가 발생했습니다'
+        });
+    }
+};

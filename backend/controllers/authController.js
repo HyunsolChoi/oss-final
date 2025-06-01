@@ -164,7 +164,7 @@ exports.authChangePassword = async (req, res) => {
 
 // 회원가입
 exports.authSignup = async (req, res) => {
-    const { userId, email, password, sector, education, region, skills } = req.body;
+    const { userId, email, password, sector, education, region, skills, questions, answers } = req.body;
 
     if (!userId || !email || !password || !sector || !education || !region || !skills || !Array.isArray(skills)) {
         return res.status(400).json({ success: false, message: '모든 항목을 입력해주세요.' });
@@ -244,8 +244,42 @@ exports.authSignup = async (req, res) => {
             });
         }
 
+        // 5. GPT 질문과 답변 저장 (있는 경우)
+        if (questions && answers && questions.length === answers.length) {
+            for (let i = 0; i < questions.length; i++) {
+                queries.push({
+                    query: `INSERT INTO gpt_questions (user_id, question_text, question_order) VALUES (?, ?, ?)`,
+                    params: [userId, questions[i], i + 1]
+                });
+            }
+        }
+
+
         // 트랜잭션 실행
-        await executeTransaction(queries);
+        const result = executeTransaction(queries);
+
+        // 답변 저장 (질문 ID가 필요하므로 별도 처리)
+        if (questions && answers && questions.length === answers.length) {
+            const [questionRows] = await executeQuery(
+                `SELECT question_id FROM gpt_questions WHERE user_id = ? ORDER BY question_order`,
+                [userId]
+            );
+
+            const answerQueries = [];
+            for (let i = 0; i < answers.length; i++) {
+                if (questionRows[i] && answers[i].trim()) {
+                    answerQueries.push({
+                        query: `INSERT INTO user_answers (user_id, question_id, answer_text) VALUES (?, ?, ?)`,
+                        params: [userId, questionRows[i].question_id, answers[i].trim()]
+                    });
+                }
+            }
+
+            if (answerQueries.length > 0) {
+                await executeTransaction(answerQueries);
+            }
+        }
+
         return res.status(201).json({ success: true, message: '회원가입 완료' });
 
     } catch (e) {

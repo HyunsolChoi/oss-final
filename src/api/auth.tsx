@@ -172,6 +172,8 @@ export async function signup(data: {
     education: string;
     region: string;
     skills: string[];
+    questions?: string[];
+    answers?: string[];
 }): Promise<{ success: boolean; message?: string }> {
     try {
         const response = await fetch('/api/auth/signup', {
