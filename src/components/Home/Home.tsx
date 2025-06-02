@@ -4,7 +4,7 @@ import { Job, getLatestJobs, getTop100Jobs, getEntryLevelJobs, getMyJobs, getJob
 import {useNavigate} from "react-router-dom";
 import Footer from "../utils/Footer/Footer";
 import {toast} from "react-toastify";
-import KoreaMap from "../utils/Map/Map";
+import Map from "../utils/Map/Map";
 
 interface Props {
     userId: string;
@@ -273,7 +273,7 @@ const Home: React.FC<Props> = ({ userId, activeTab, activeTabHandler }) => {
                         </div>
 
                         <div className="graphic">
-                            <KoreaMap
+                            <Map
                                 onRegionClick={handleRegionClick}
                                 selectedRegion={selectedRegion}
                             />
