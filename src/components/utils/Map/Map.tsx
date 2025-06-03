@@ -230,13 +230,19 @@ const Map: React.FC<Props> = ({ onRegionClick, selectedRegion }) => {
     return (
         <div className="korea-map-container">
             <div className="map-header">
-                <p>지역을 클릭하여 필터링하세요</p>
+                {!hoveredRegion && (
+                    <p>지역을 클릭하여 필터링하세요</p>
+                )}
+                {hoveredRegion && (
+                    <p className="tooltip">
+                        {regions.find(r => r.id === hoveredRegion)?.name}
+                    </p>
+                )}
             </div>
 
             {error && (
                 <div className="error-message">
                     <span>⚠️ {error}</span>
-                    <small>(기본 지도로 표시됩니다)</small>
                 </div>
             )}
 
@@ -245,8 +251,8 @@ const Map: React.FC<Props> = ({ onRegionClick, selectedRegion }) => {
                 className="korea-map-svg"
                 xmlns="http://www.w3.org/2000/svg"
             >
-                {/* 배경 */}
-                <rect width="400" height="500" fill="#f1f5f9" rx="8"/>
+                {/* 배경 하고싶으면..width 조절*/}
+                <rect width="0" height="500" fill="#f1f5f9" rx="8"/>
 
                 {regions.map((region) => {
                     const isSelected = selectedRegion === region.name;
@@ -317,11 +323,7 @@ const Map: React.FC<Props> = ({ onRegionClick, selectedRegion }) => {
                 })}
             </svg>
 
-            {hoveredRegion && !selectedRegion && (
-                <div className="tooltip">
-                    {regions.find(r => r.id === hoveredRegion)?.name}
-                </div>
-            )}
+
         </div>
     );
 };

@@ -303,33 +303,35 @@ exports.getJobsByRegion = async (req, res) => {
 
     try {
 
-        const likePatterns = buildRegionLikePatterns(region);
+        const likePatterns = buildRegionLikePatterns(region);       // ex) ["%경기%","%인천%"]
 
-        const likePlaceholders = likePatterns.map(() => 'l.location_name LIKE ?').join(' OR ');
+        const likePlaceholders =
+          likePatterns.map(() => 'l.location_name LIKE ?').join(' OR ') + ' OR l.location_name = ?';
 
         const query = `
-              SELECT DISTINCT
-                j.job_posting_id AS id,
-                c.company_name   AS company,
-                j.title,
-                j.link,
-                j.views,
-                GROUP_CONCAT(DISTINCT l.location_name SEPARATOR ', ') AS location,
-                GROUP_CONCAT(DISTINCT s.sector_name   SEPARATOR ', ') AS sectors,
-                j.deadline
-              FROM job_postings j
-              JOIN companies            c   ON j.company_id       = c.company_id
-              JOIN job_posting_locations jpl ON j.job_posting_id   = jpl.job_posting_id
-              JOIN locations             l   ON jpl.location_id    = l.location_id
-              LEFT JOIN job_posting_sectors jps ON j.job_posting_id = jps.job_posting_id
-              LEFT JOIN sectors            s   ON jps.sector_id     = s.sector_id
-              WHERE (${likePlaceholders})
-              GROUP BY j.job_posting_id
-              ORDER BY j.views DESC
-            `;
+          SELECT DISTINCT
+            j.job_posting_id AS id,
+            c.company_name   AS company,
+            j.title,
+            j.link,
+            j.views,
+            GROUP_CONCAT(DISTINCT l.location_name SEPARATOR ', ') AS location,
+            GROUP_CONCAT(DISTINCT s.sector_name   SEPARATOR ', ') AS sectors,
+            j.deadline
+          FROM job_postings j
+          JOIN companies            c   ON j.company_id       = c.company_id
+          JOIN job_posting_locations jpl ON j.job_posting_id   = jpl.job_posting_id
+          JOIN locations             l   ON jpl.location_id    = l.location_id
+          LEFT JOIN job_posting_sectors jps ON j.job_posting_id = jps.job_posting_id
+          LEFT JOIN sectors            s   ON jps.sector_id     = s.sector_id
+          WHERE (${likePlaceholders})
+          GROUP BY j.job_posting_id
+          ORDER BY j.views DESC
+        `;
 
+        const params = [...likePatterns, '전국'];   // ex) ["%경기%","%인천%","전국"]
 
-        const [rows] = await executeQuery(query, [`%${likePatterns}%`]);
+        const [rows] = await executeQuery(query, params);
         res.json(rows);
     } catch (err) {
         console.error('getJobsByRegion 오류:', err.message);

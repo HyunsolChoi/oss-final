@@ -272,7 +272,7 @@ const Home: React.FC<Props> = ({ userId, activeTab, activeTabHandler }) => {
                             {renderCurrentJobs(activeTab, topJobs, entryJobs, myJobs, regionalJobs)}
                         </div>
 
-                        <div className="graphic">
+                        <div className="region-map">
                             <Map
                                 onRegionClick={handleRegionClick}
                                 selectedRegion={selectedRegion}
