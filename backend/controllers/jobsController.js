@@ -255,24 +255,31 @@ exports.getJobInfo = async (req, res) => {
     try {
         const [[job]] = await executeQuery(`
       SELECT
-        j.title,
-        c.company_name AS company,
-        j.deadline,
-        GROUP_CONCAT(DISTINCT l.location_name SEPARATOR ', ') AS location,
-        ed.education_level AS education,
-        GROUP_CONCAT(DISTINCT et.employment_type_name SEPARATOR ', ') AS employment_type,
-        GROUP_CONCAT(DISTINCT s.sector_name SEPARATOR ', ') AS sectors
-      FROM job_postings j
-      JOIN companies c ON j.company_id = c.company_id
-      LEFT JOIN job_posting_locations jpl ON j.job_posting_id = jpl.job_posting_id
-      LEFT JOIN locations l ON jpl.location_id = l.location_id
-      LEFT JOIN educations ed ON j.education_id = ed.education_id
-      LEFT JOIN job_posting_employment_types jpet ON j.job_posting_id = jpet.job_posting_id
-      LEFT JOIN employment_types et ON jpet.employment_type_id = et.employment_type_id
-      LEFT JOIN job_posting_sectors jps ON j.job_posting_id = jps.job_posting_id
-      LEFT JOIN sectors s ON jps.sector_id = s.sector_id
-      WHERE j.job_posting_id = ?
-      GROUP BY j.job_posting_id
+          j.job_posting_id AS id,
+          c.company_name AS company,
+          j.title,
+          j.link,
+          GROUP_CONCAT(DISTINCT l.location_name SEPARATOR '/ ') AS location,
+          GROUP_CONCAT(DISTINCT e.experience_level SEPARATOR '/ ') AS experience,
+          ed.education_level AS education,
+          GROUP_CONCAT(DISTINCT et.employment_type_name SEPARATOR '/ ') AS employmentType,
+          j.salary,
+          j.views,
+          GROUP_CONCAT(DISTINCT s.sector_name SEPARATOR '/ ') AS sectors,
+          j.deadline
+        FROM job_postings j
+        JOIN companies c ON j.company_id = c.company_id
+        LEFT JOIN job_posting_locations jpl ON j.job_posting_id = jpl.job_posting_id
+        LEFT JOIN locations l ON jpl.location_id = l.location_id
+        LEFT JOIN job_posting_experiences jpe ON j.job_posting_id = jpe.job_posting_id
+        LEFT JOIN experiences e ON jpe.experience_id = e.experience_id
+        LEFT JOIN educations ed ON j.education_id = ed.education_id
+        LEFT JOIN job_posting_employment_types jpet ON j.job_posting_id = jpet.job_posting_id
+        LEFT JOIN employment_types et ON jpet.employment_type_id = et.employment_type_id
+        LEFT JOIN job_posting_sectors jps ON j.job_posting_id = jps.job_posting_id
+        LEFT JOIN sectors s ON jps.sector_id = s.sector_id
+        WHERE j.job_posting_id = ?
+        GROUP BY j.job_posting_id;
     `, [jobId]);
 
         if (!job) {

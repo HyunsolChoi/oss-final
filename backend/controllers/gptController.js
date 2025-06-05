@@ -376,7 +376,6 @@ exports.generateGPTQuestions = async (req, res) => {
     }
 };
 
-// 현재는 사용되진 않는 API
 // 질문과 답변 저장 API => 혹시라도 질문 더 만다는 기능 추가로 활용 가능
 exports.saveQuestionsAndAnswers = async (req, res) => {
     const { userId, questions, answers } = req.body;
