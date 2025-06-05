@@ -10,7 +10,9 @@ interface Props {
 }
 
 const Consulting: React.FC<Props> = ({checkToken}) => {
-    const [gptResult, setGptResult] = useState<String>('');
+    const [gptSummary, setGptSummary] = useState<String>('');
+    const [gptFit, setGptFit] = useState<String>('');
+    const [gptGap, setGptGap] = useState<String>('');
     const { jobId } = useParams<{ jobId: string }>();
     const [uId, setUId] = useState('');
 
@@ -22,7 +24,7 @@ const Consulting: React.FC<Props> = ({checkToken}) => {
 
     useEffect(() => {
         const validId = checkToken() ?? '';
-        
+
         if(!validId){
             toast.error("컨설팅 서비스는 로그인 후 사용 가능합니다");
             navigate('/signin');
@@ -42,10 +44,12 @@ const Consulting: React.FC<Props> = ({checkToken}) => {
                 const job = await getJobInfo(Number(jobId));
                 const res = await getConsulting(validId, job);
 
-                if (res.success && res.gptOutput) {
-                    setGptResult(res.gptOutput);
+                if (res.success && res.gptSummary && res.gptFit && res.gptGap) {
+                    setGptSummary(res.gptSummary);
+                    setGptFit(res.gptFit);
+                    setGptGap(res.gptGap);
                 } else {
-                    toast.error(res.message || '컨설팅 요청 실패');
+                    toast.error(res.gptFit || '컨설팅 요청 실패');
                 }
             } catch (err) {
                 console.error(err);
@@ -58,10 +62,22 @@ const Consulting: React.FC<Props> = ({checkToken}) => {
     return (
         <div className="consulting-wrapper">
             <div className="consulting-container">
-                <h2 className="consulting-title">GPT 컨설팅 결과</h2>
+                <h2 className="consulting-title">📈 적합도 </h2>
                 {uId !== '' && (
-                    <pre className="consulting-output">
-                        {gptResult}
+                    <pre className="consulting-fit">
+                        {gptFit}
+                    </pre>
+                )}
+                <h2 className="consulting-title">📜 채용 공고 요약</h2>
+                {uId !== '' && (
+                    <pre className="consulting-summary">
+                        {gptSummary}
+                    </pre>
+                )}
+                <h2 className="consulting-title">📚 채용 공고와 비교</h2>
+                {uId !== '' && (
+                    <pre className="consulting-gap">
+                        {gptGap}
                     </pre>
                 )}
             </div>

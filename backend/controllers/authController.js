@@ -164,9 +164,9 @@ exports.authChangePassword = async (req, res) => {
 
 // 회원가입
 exports.authSignup = async (req, res) => {
-    const { userId, email, password, sector, education, region, skills } = req.body;
+    const { userId, email, password, sector, education, region, skills, questions, answers } = req.body;
 
-    if (!userId || !email || !password || !sector || !education || !region || !skills || !Array.isArray(skills)) {
+    if (!userId || !email || !password || !sector || !education || !region || !skills || !Array.isArray(skills) || !questions || !answers) {
         return res.status(400).json({ success: false, message: '모든 항목을 입력해주세요.' });
     }
 
@@ -244,8 +244,22 @@ exports.authSignup = async (req, res) => {
             });
         }
 
+        // 5. GPT 질문과 답변 저장
+        if (questions && answers && questions.length === answers.length) {
+            for (let i = 0; i < questions.length; i++) {
+                if(questions[i].trim() && answers[i].trim()){
+                    queries.push({
+                        query: `INSERT INTO user_gpt (user_id, gpt_question, user_answer) VALUES (?, ?, ?)`,
+                        params: [userId, questions[i].trim(), answers[i].trim()]
+                    });
+                }
+            }
+        }
+
+
         // 트랜잭션 실행
-        await executeTransaction(queries);
+        const result = executeTransaction(queries);
+
         return res.status(201).json({ success: true, message: '회원가입 완료' });
 
     } catch (e) {

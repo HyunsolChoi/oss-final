@@ -1,4 +1,4 @@
-// src/components/Navbar.tsx
+// src/components/utils/Navbar/Navbar.tsx
 import React, {useEffect, useRef, useState} from 'react'
 import {useLocation, useNavigate, useSearchParams} from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -9,8 +9,8 @@ import {toast} from "react-toastify";
 
 interface Props {
     userId: string;
-    activeTab: 'Top100' | 'Entry' | 'MyJob';
-    activeTabHandler: (menu: 1 | 2 | 3) => void;
+    activeTab: 'Top100' | 'Entry' | 'MyJob' | 'Regional';
+    activeTabHandler: (menu: 1 | 2 | 3 | 4) => void;
 }
 
 const Navbar: React.FC<Props> = ({ userId, activeTab, activeTabHandler }) => {
@@ -88,7 +88,6 @@ const Navbar: React.FC<Props> = ({ userId, activeTab, activeTabHandler }) => {
         }
     }, [location.pathname, searchParams]);
 
-
     const searchHandler = () => {
         const trimmed = searchInput.trim();
         if (trimmed) {
@@ -102,42 +101,51 @@ const Navbar: React.FC<Props> = ({ userId, activeTab, activeTabHandler }) => {
                 <div className="navbar-logo" onClick={() => onLogoClick()}>CareerFit</div>
                 <ul className={`navbar-links ${scrolled ? 'scrolled' : ''}`}>
                     <li>
-                        {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
                         <a href="#"
-                            className={scrolled && activeTab === 'Top100' ? 'scrolled-active' : ''}
-                            onClick={(e) => {
-                                e.preventDefault();
-                                activeTabHandler(1);
-                                window.scrollTo({ top: 515, behavior: 'smooth' });
-                            }}
+                           className={scrolled && activeTab === 'Top100' ? 'scrolled-active' : ''}
+                           onClick={(e) => {
+                               e.preventDefault();
+                               activeTabHandler(1);
+                               window.scrollTo({ top: 515, behavior: 'smooth' });
+                           }}
                         >
                             Top100
                         </a>
                     </li>
                     <li>
-                        {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
                         <a href="#"
-                            className={scrolled && activeTab === 'Entry' ? 'scrolled-active' : ''}
-                            onClick={(e) => {
-                                e.preventDefault();
-                                activeTabHandler(2);
-                                window.scrollTo({ top: 515, behavior: 'smooth' });
-                            }}
+                           className={scrolled && activeTab === 'Entry' ? 'scrolled-active' : ''}
+                           onClick={(e) => {
+                               e.preventDefault();
+                               activeTabHandler(2);
+                               window.scrollTo({ top: 515, behavior: 'smooth' });
+                           }}
                         >
                             신입
                         </a>
                     </li>
                     <li>
-                        {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
                         <a href="#"
-                            className={scrolled && activeTab === 'MyJob' ? 'scrolled-active' : ''}
-                            onClick={(e) => {
-                                e.preventDefault();
-                                activeTabHandler(3);
-                                window.scrollTo({ top: 515, behavior: 'smooth' });
-                            }}
+                           className={scrolled && activeTab === 'MyJob' ? 'scrolled-active' : ''}
+                           onClick={(e) => {
+                               e.preventDefault();
+                               activeTabHandler(3);
+                               window.scrollTo({ top: 515, behavior: 'smooth' });
+                           }}
                         >
                             나의 직무
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#"
+                           className={scrolled && activeTab === 'Regional' ? 'scrolled-active' : ''}
+                           onClick={(e) => {
+                               e.preventDefault();
+                               activeTabHandler(4);
+                               window.scrollTo({ top: 515, behavior: 'smooth' });
+                           }}
+                        >
+                            지역별
                         </a>
                     </li>
                 </ul>

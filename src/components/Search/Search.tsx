@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { getSearchResult } from '../../api/jobs';
 import './Search.css';
+import {useNavigate} from "react-router-dom";
 import { Job } from '../../api/jobs';
 import {toast} from "react-toastify";
 import Footer from "../utils/Footer/Footer"; // Job 타입만 사용
@@ -11,6 +12,17 @@ const Search: React.FC = () => {
     const [results, setResults] = useState<Job[]>([]);
     const [visibleCount, setVisibleCount] = useState(50);
     const loadMoreRef = useRef<HTMLDivElement | null>(null);
+
+    const navigate = useNavigate();
+
+    const postClickHandler = (jobId : number) => {
+        if(jobId <= 0 && jobId === null){
+            toast.error("유효하지 않은 공고");
+            return;
+        }
+        navigate(`/consulting/${jobId}`);
+        return;
+    };
 
     useEffect(() => {
         const raw = searchParams.get('query') || '';
@@ -92,6 +104,7 @@ const Search: React.FC = () => {
                         target="_blank"
                         rel="noopener noreferrer"
                         className="rect-card"
+                        onClick={(e)=>{ e.preventDefault(); postClickHandler(job.id)}}
                     >
                         <div className="card-content">
                             <div className="info">

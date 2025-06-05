@@ -21,26 +21,29 @@ interface JwtPayload {
 }
 
 function App() {
-    const [activeTab, setActiveTab] = useState<'Top100' | 'Entry' | 'MyJob'>('Top100');
+    const [activeTab, setActiveTab] = useState<'Top100' | 'Entry' | 'MyJob' | 'Regional'>('Top100');
     const [userId, setUserId] = useState('');
     const [email, setEmail] = useState('');
 
     const navigate = useNavigate();
 
-    const activeTabHandler = (menu: 1 | 2 | 3) => {
-        let newTab: 'Top100' | 'Entry' | 'MyJob';
+    const activeTabHandler = (menu: 1 | 2 | 3 | 4) => {
+        let newTab: 'Top100' | 'Entry' | 'MyJob' | 'Regional';
         if (menu === 1) {
             newTab = 'Top100';
         } else if (menu === 2) {
             newTab = 'Entry';
-        } else {
+        } else if (menu === 3) {
             if(userId===''){
                 toast.error('로그인 후 이용 가능합니다');
                 navigate('/signin');
                 return;
             }
             newTab = 'MyJob';
+        } else {
+            newTab = 'Regional';
         }
+
         if (activeTab !== newTab) {
             setActiveTab(newTab);
         }
@@ -77,58 +80,57 @@ function App() {
         checkToken();
     }, []);
 
-
     return (
-    <div>
-        <Navbar activeTab={activeTab} activeTabHandler={activeTabHandler} userId={userId}/>
-        <Routes>
-            <Route
-                path="/"
-                element={<Home activeTab={activeTab} activeTabHandler={activeTabHandler} userId={userId}/>}
+        <div>
+            <Navbar activeTab={activeTab} activeTabHandler={activeTabHandler} userId={userId}/>
+            <Routes>
+                <Route
+                    path="/"
+                    element={<Home activeTab={activeTab} activeTabHandler={activeTabHandler} userId={userId}/>}
+                />
+                <Route
+                    path="/signin"
+                    element={<Signin setUserId={setUserId} checkToken={checkToken}/>}
+                />
+                <Route
+                    path="/agreement"
+                    element={<Agreement/>}>
+                </Route>
+                <Route
+                    path="/email"
+                    element={<Email email={email} setEmail={setEmail}/>}>
+                </Route>
+                <Route
+                    path="/signup"
+                    element={<Signup email={email}/>}>
+                </Route>
+                <Route
+                    path="/consulting/:jobId"
+                    element={<Consulting checkToken={checkToken}/>}>
+                </Route>
+                <Route path="/search"
+                       element={<Search />} >
+                </Route>
+                <Route
+                    path="/profile"
+                    element={<Profile userId={userId}/>}>
+                </Route>
+                <Route
+                    path="/find_idpw"
+                    element={<FindIdPw checkToken={checkToken}/>}>
+                </Route>
+            </Routes>
+            <ToastContainer
+                position="top-center"
+                autoClose={2000}
+                hideProgressBar
+                newestOnTop
+                closeOnClick
+                draggable={false}
+                pauseOnHover
             />
-            <Route
-                path="/signin"
-                element={<Signin userId={userId} setUserId={setUserId} checkToken={checkToken}/>}
-            />
-            <Route
-                path="/agreement"
-                element={<Agreement/>}>
-            </Route>
-            <Route
-                path="/email"
-                element={<Email email={email} setEmail={setEmail}/>}>
-            </Route>
-            <Route
-                path="/signup"
-                element={<Signup email={email}/>}>
-            </Route>
-            <Route
-                path="/consulting/:jobId"
-                element={<Consulting checkToken={checkToken}/>}>
-            </Route>
-            <Route path="/search"
-                   element={<Search />} >
-            </Route>
-            <Route
-                path="/profile"
-                element={<Profile userId={userId}/>}>
-            </Route>
-            <Route
-                path="/find_idpw"
-                element={<FindIdPw checkToken={checkToken}/>}>
-            </Route>
-        </Routes>
-        <ToastContainer
-            position="top-center"
-            autoClose={2000}
-            hideProgressBar
-            newestOnTop
-            closeOnClick
-            draggable={false}
-            pauseOnHover
-        />
-    </div>
-  );
+        </div>
+    );
 }
 
 export default App;

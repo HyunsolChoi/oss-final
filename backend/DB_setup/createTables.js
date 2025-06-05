@@ -187,6 +187,16 @@ async function createTables() {
                 email VARCHAR(30) PRIMARY KEY,
                 code CHAR(6) NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );`,
+
+            //23. 유저 GPT Q&A 테이블
+            `CREATE TABLE IF NOT EXISTS user_gpt (
+                user_gpt_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                user_id CHAR(30) NOT NULL,
+                gpt_question TEXT NOT NULL,
+                user_answer TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
             );`
 
             // // 16. 북마크 정보 저장 테이블
@@ -221,11 +231,11 @@ async function createTables() {
               FOR EACH ROW
               BEGIN
                 DECLARE count_refs INT;
-            
+
                 SELECT COUNT(*) INTO count_refs
                 FROM user_skills
                 WHERE skill_id = OLD.skill_id;
-            
+
                 IF count_refs = 0 THEN
                   DELETE FROM skills WHERE skill_id = OLD.skill_id;
                 END IF;

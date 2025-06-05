@@ -183,7 +183,7 @@ const ProfileInfo: React.FC<Props> = ({ userId }) => {
 
                 {/* 지역 */}
                 <label>
-                    지역
+                    근무 희망 지역
                     <select
                         value={userData.region}
                         disabled={!editMode}

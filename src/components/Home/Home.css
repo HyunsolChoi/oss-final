@@ -128,6 +128,7 @@
 
 .list-and-graphic {
     display: flex;
+    gap: 24px;
 }
 
 .list-container {
@@ -192,15 +193,15 @@
     gap: 4px;
 }
 
-.graphic {
+.region-map {
     flex: 1;
-    background-color: #2563eb; /* 강조 블루 */
     margin-left: 16px;
     border-radius: 4px;
-    color: #f8fafc;
-    display: flex;
+    position: sticky;
+    top: 80px;
+    align-self: flex-start;
     justify-content: center;
     align-items: center;
     font-size: 1.2rem;
+    overflow: hidden;
 }
-
