@@ -49,6 +49,8 @@ const Navbar: React.FC<Props> = ({ userId, activeTab, activeTabHandler }) => {
         const handleScroll = () => {
             if (window.location.pathname === '/') {
                 setScrolled(window.scrollY >= 490);
+            }else{
+                setScrolled(false);
             }
         };
 

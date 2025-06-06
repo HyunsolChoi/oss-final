@@ -119,6 +119,7 @@ const Home: React.FC<Props> = ({ userId, activeTab, activeTabHandler }) => {
         return (
             <>
                 {jobsToRender.map(job => (
+                    // eslint-disable-next-line jsx-a11y/anchor-is-valid
                     <a
                         key={job.id}
                         href={'#'}

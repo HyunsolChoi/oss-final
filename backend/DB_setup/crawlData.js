@@ -11,6 +11,19 @@ async function crawlSaramin(pages = 1) {
     const headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
     };
+    const excludedRegions = [
+        '미국',
+        '일본',
+        '중국·홍콩',
+        '북·중미',
+        '유럽',
+        '아프리카',
+        '기타해외',
+        '아시아·중동',
+        '남미',
+        '오세아니아',
+        '남극대륙'
+    ];
 
     for (let page = 1; page <= pages; page++) {
         const url = `https://www.saramin.co.kr/zf_user/search/recruit?searchType=search&searchword=채용&recruitPage=${page}&recruitSort=relation&recruitPageCount=40`;
@@ -28,8 +41,11 @@ async function crawlSaramin(pages = 1) {
 
                     const conditions = $(element).find('.job_condition span');
 
-                    // 연속 된 하나로 셋팅
                     const location = conditions.eq(0).text().trim().replace(/\s+/g, ' ') || '';
+
+                    // 해외 공고의 경우 긁어오지 않도록 (지도 필터링 기능을 위해)
+                    if (excludedRegions.some(keyword => location.includes(keyword))) return;
+
                     const experience = conditions.eq(1).text().trim() || '';
                     const education = conditions.eq(2).text().trim() || '';
                     const employmentType = conditions.eq(3).text().trim() || '';

@@ -17,8 +17,6 @@ interface Props {
     selectedRegion?: string;
 }
 
-
-
 interface Region {
     name: string;
     id: string;
@@ -242,7 +240,7 @@ const Map: React.FC<Props> = ({ onRegionClick, selectedRegion }) => {
 
             {error && (
                 <div className="error-message">
-                    <span>⚠️ {error}</span>
+                    <span>{error}</span>
                 </div>
             )}
 

@@ -27,7 +27,7 @@ function App() {
 
     const navigate = useNavigate();
 
-    const activeTabHandler = (menu: 1 | 2 | 3 | 4) => {
+    const activeTabHandler: (tabIndex: 1 | 2 | 3 | 4) => void = (menu: 1 | 2 | 3 | 4) => {
         let newTab: 'Top100' | 'Entry' | 'MyJob' | 'Regional';
         if (menu === 1) {
             newTab = 'Top100';

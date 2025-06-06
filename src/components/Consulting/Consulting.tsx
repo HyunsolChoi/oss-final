@@ -4,6 +4,7 @@ import './Consulting.css';
 import {getConsulting} from '../../api/gpt';
 import {toast} from "react-toastify";
 import {getJobInfo, Job} from "../../api/jobs";
+import Footer from "../utils/Footer/Footer";
 
 interface Props {
     checkToken: () =>  string | undefined;
@@ -121,6 +122,7 @@ const Consulting: React.FC<Props> = ({checkToken}) => {
                     </div>
                 )}
             </div>
+            <Footer />
         </div>
     );
 };
