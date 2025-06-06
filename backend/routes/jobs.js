@@ -9,5 +9,6 @@ router.post('/myjobs',   ctrl.getMyJobs);
 router.post('/search', ctrl.searchJobs);
 router.post('/jobinfo', ctrl.getJobInfo);
 router.post('/region', ctrl.getJobsByRegion);
+router.post('/increase-view', ctrl.increaseView);
 
 module.exports = router;

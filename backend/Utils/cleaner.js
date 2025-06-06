@@ -25,15 +25,33 @@ async function cleanupExpiredVerificationCodes() {
     }
 }
 
+// manage_view 정리 (3분 지난 기록 삭제)
+async function cleanupManageView() {
+    try {
+        await executeQuery(`
+            DELETE FROM manage_view
+            WHERE viewed_at < NOW() - INTERVAL 3 MINUTE
+        `);
+        console.log(`[View 히스토리 클리너] 기록 삭제 완료`);
+    } catch (error) {
+        console.error('[View 히스토리 클리너 오류]:', error.message);
+    }
+}
+
 // 1시간마다 실행 (60 * 60 * 1000 ms)
 function startCleanupScheduler() {
     cleanupExpiredTokens().catch(console.error);
     cleanupExpiredVerificationCodes().catch(console.error);
+    cleanupManageView().catch(console.error);
 
     setInterval(() => {
         cleanupExpiredTokens().catch(console.error);
         cleanupExpiredVerificationCodes().catch(console.error);
-    }, 60 * 60 * 1000);
+    }, 60 * 60 * 1000); // 1시간
+
+    setInterval(() => {
+        cleanupManageView().catch(console.error);
+    }, 10 * 60 * 1000); // 10분
 }
 
 module.exports = { startCleanupScheduler };

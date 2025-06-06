@@ -355,3 +355,52 @@ exports.getJobsByRegion = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
+
+// 조회수 증가 - 3분 내에 중복 조회 시 증가 하지않도록 함
+exports.increaseView = async (req, res) => {
+    const { jobId, userId } = req.body;
+
+    if (!jobId || !userId) {
+        return res.status(400).json({ success: false, message: 'jobId와 userId는 필수입니다.' });
+    }
+
+    try {
+        // 1. 기존 기록 확인
+        const [[existing]] = await executeQuery(
+            `SELECT viewed_at FROM manage_view WHERE user_id = ? AND job_posting_id = ?`,
+            [userId, jobId]
+        );
+
+        if (existing) {
+            const lastViewed = new Date(existing.viewed_at);
+            const now = new Date();
+            const diffMs = now.getTime() - lastViewed.getTime();
+            const diffMinutes = diffMs / (1000 * 60);
+
+            // 마지막 조회 3분 미만이면 조회수 증가 안함
+            if (diffMinutes < 3) {
+                return res.json({ success: true, message: '3분 이내 재조회 - 조회수 증가 생략' });
+            }
+        }
+
+        // 2. 조회 기록 갱신 (없으면 insert, 있으면 update)
+        await executeQuery(
+            `INSERT INTO manage_view (user_id, job_posting_id, viewed_at)
+             VALUES (?, ?, NOW())
+             ON DUPLICATE KEY UPDATE
+             viewed_at = VALUES(viewed_at)`,
+            [userId, jobId]
+        );
+
+        // 3. 조회수 증가
+        await executeQuery(
+            `UPDATE job_postings SET views = views + 1 WHERE job_posting_id = ?`,
+            [jobId]
+        );
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error('[increaseView] 오류:', err.message);
+        res.status(500).json({ success: false, message: '조회수 증가 중 오류 발생' });
+    }
+};

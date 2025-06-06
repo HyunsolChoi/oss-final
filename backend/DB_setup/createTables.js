@@ -189,7 +189,7 @@ async function createTables() {
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );`,
 
-            //23. 유저 GPT Q&A 테이블
+            // 23. 유저 GPT Q&A 테이블
             `CREATE TABLE IF NOT EXISTS user_gpt (
                 user_gpt_id BIGINT AUTO_INCREMENT PRIMARY KEY,
                 user_id CHAR(30) NOT NULL,
@@ -197,6 +197,16 @@ async function createTables() {
                 user_answer TEXT NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+            );`,
+
+            // 24. 조회수 증가 시 새로고침으로 인한 조회수 증가 방지
+            `CREATE TABLE IF NOT EXISTS manage_view (
+                user_id CHAR(30) NOT NULL,
+                job_posting_id BIGINT NOT NULL,
+                viewed_at DATETIME,
+                PRIMARY KEY (user_id, job_posting_id),
+                FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+                FOREIGN KEY (job_posting_id) REFERENCES job_postings(job_posting_id) ON DELETE CASCADE
             );`
 
             // // 16. 북마크 정보 저장 테이블

@@ -75,6 +75,19 @@ export async function getJobInfo(jobId: number): Promise<Job> {
     return result.job as Job;
 }
 
+// 조회수 증가
+export async function increaseJobView(jobId: number, userId: string): Promise<void> {
+    const res = await fetch('/api/jobs/increase-view', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobId, userId }),
+    });
+
+    if (!res.ok) {
+        throw new Error('조회수 증가에 실패했습니다');
+    }
+}
+
 // 지역별 채용공고 조회
 export async function getJobsByRegion(region: string): Promise<Job[]> {
     const res = await fetch('/api/jobs/region', {

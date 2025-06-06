@@ -3,7 +3,7 @@ import {useNavigate, useParams} from "react-router-dom";
 import './Consulting.css';
 import {getConsulting} from '../../api/gpt';
 import {toast} from "react-toastify";
-import {getJobInfo, Job} from "../../api/jobs";
+import {getJobInfo, increaseJobView, Job} from "../../api/jobs";
 import Footer from "../utils/Footer/Footer";
 
 interface Props {
@@ -19,8 +19,7 @@ const Consulting: React.FC<Props> = ({checkToken}) => {
 
     const navigate = useNavigate();
 
-    // 임시
-    // todo: 갱신 구현 이전에 지피티 답변 정보 저장 기능 구현하기
+    // todo: 지피티 답변 정보 저장 기능 구현하기
     const handleRetry = async () => {
         if (!jobInfo || !uId) return;
 
@@ -63,6 +62,11 @@ const Consulting: React.FC<Props> = ({checkToken}) => {
                 const job = await getJobInfo(Number(jobId));
                 setJobInfo(job); // job 정보 상태 저장
 
+                // 조회수 증가
+                await increaseJobView(Number(jobId), validId);
+
+                // todo: 기존에 컨설팅 내역이 있다면 가져오고 return
+
                 setLoading(true);
                 const res = await getConsulting(validId, job);
                 setLoading(false);
@@ -78,7 +82,7 @@ const Consulting: React.FC<Props> = ({checkToken}) => {
             }
         })();
 
-    }, [checkToken, jobId, navigate, uId]);
+    }, [checkToken, jobId, navigate]);
 
     return (
         <div className="consulting-wrapper">

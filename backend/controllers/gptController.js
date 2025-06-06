@@ -317,8 +317,6 @@ async function generateQuestions(job, skills, education, region) {
     }
 }
 
-
-//-----------------exports 함수들-----------------------
 // GET 컨설팅
 exports.getConsultingContext = async (req, res) => {
     const { userId, job } = req.body;
