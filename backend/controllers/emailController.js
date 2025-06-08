@@ -9,6 +9,9 @@ const transporter = nodemailer.createTransport({
     auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
+    },
+    tls:{
+        rejectUnauthorized: false // 개발/테스트용으로만, 프로덕션에서는 CA 인증서 추가 방식 권장
     }
 });
 
@@ -44,6 +47,7 @@ async function validateEmailCode(email, code) {
 
 // 인증 코드 요청
 exports.requestVerificationCode = async (req, res) => {
+    console.log(transporter);
     const { email } = req.body;
     if (!email) return res.status(400).json({ message: '이메일이 필요합니다' });
 
