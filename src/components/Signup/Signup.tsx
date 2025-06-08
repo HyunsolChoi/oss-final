@@ -379,7 +379,7 @@ const Signup: React.FC<Props> = ({ email }) => {
                         <button
                             className="signup-button"
                             style={{flex: 1}}
-                            onClick={() => setPageStep(1)} // 🔙 이전 단계로 전환
+                            onClick={() => setPageStep(1)} // 이전 단계로 전환
                         >
                             이전
                         </button>
@@ -456,7 +456,7 @@ const Signup: React.FC<Props> = ({ email }) => {
                             <button
                                 className="signup-button"
                                 style={{ flex: 1 }}
-                                onClick={() => setPageStep(2)} // 🔙 이전 단계로 전환
+                                onClick={() => setPageStep(2)} // 이전 단계로 전환
                             >
                                 이전
                             </button>

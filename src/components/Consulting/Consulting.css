@@ -29,7 +29,7 @@
     color: #1e293b;
 }
 
-.consulting-fit {
+.consulting-answer {
     white-space: pre-wrap;
     line-height: 1.6;
     font-family: 'Noto Sans KR', sans-serif;
@@ -40,26 +40,130 @@
     overflow-x: auto;
 }
 
-.consulting-summary {
-    white-space: pre-wrap;
-    line-height: 1.6;
-    font-family: 'Noto Sans KR', sans-serif;
-    color: #334155;
-    background-color: #f8fafc;
-    padding: 20px;
-    border-radius: 8px;
-    overflow-x: auto;
+.consulting-info-grid {
+    background-color: #f1f5f9;
+    padding: 24px;
+    border-radius: 12px;
+    box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.05);
+    margin-bottom: 32px;
 }
 
-.consulting-gap {
-    white-space: pre-wrap;
-    line-height: 1.6;
-    font-family: 'Noto Sans KR', sans-serif;
-    color: #334155;
-    background-color: #f8fafc;
-    padding: 20px;
-    border-radius: 8px;
-    overflow-x: auto;
+.info-title-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 24px;
 }
 
+.info-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e293b;
+    text-align: center;
+    padding-right: 40px;
+    word-break: break-word;
+}
+
+.star-button {
+    position: absolute;
+    right: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.5rem;
+}
+
+.info-pair {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.info-pair .info-box {
+    flex: 1 1 auto;              /* 유동적 너비 */
+    min-width: 200px;
+    max-width: 100%;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+
+.info-box {
+    background-color: #ffffff;
+    padding: 14px 16px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    font-size: 0.95rem;
+    color: #1e293b;
+}
+
+.info-box strong {
+    font-weight: 600;
+    color: #0f172a;
+    margin-bottom: 6px;
+}
+
+.info-box span {
+    color: #334155;
+}
+
+.info-footer {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    padding: 8px 4px;
+}
+
+.info-link {
+    color: #3b82f6;
+    text-decoration: none;
+    font-weight: 600;
+    white-space: nowrap;
+    margin-top: 10px;
+}
+
+.info-link:hover {
+    color: #1d4ed8;
+    text-decoration: underline;
+}
+
+.info-deadline {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #ef4444;
+    white-space: nowrap;
+}
+
+.consulting-subtitle {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 24px 0 12px;
+    color: #1e40af;
+}
+.consulting-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 12px;
+}
+
+.consulting-retry {
+    background-color: #3b82f6;
+    color: white;
+    font-weight: 500;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.consulting-retry:hover {
+    background-color: #2563eb;
+}
 

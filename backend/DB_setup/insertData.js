@@ -171,7 +171,7 @@ function parseSectorsAndModifiedDate(sectorStr) {
 // 크롤링 과정 및 page 에 따라 시간이 소요될 수 있습니다.
 // 읽어오는 공고의 수는 page * 40,
 async function main() {
-    const dataArray = await crawlSaramin(10); //250
+    const dataArray = await crawlSaramin(20); //250
     await insertData(dataArray);
 }
 

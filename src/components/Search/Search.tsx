@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { getSearchResult } from '../../api/jobs';
+import {getSearchResult} from '../../api/jobs';
 import './Search.css';
 import {useNavigate} from "react-router-dom";
 import { Job } from '../../api/jobs';
 import {toast} from "react-toastify";
-import Footer from "../utils/Footer/Footer"; // Job 타입만 사용
+import Footer from "../utils/Footer/Footer";
+import Map from "../utils/Map/Map";
 
 const Search: React.FC = () => {
     const [searchParams] = useSearchParams();
@@ -13,7 +14,31 @@ const Search: React.FC = () => {
     const [visibleCount, setVisibleCount] = useState(50);
     const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
+    const [filteredResults, setFilteredResults] = useState<Job[]>([]);
+    const [selectedRegion, setSelectedRegion] = useState<string>('');
+
     const navigate = useNavigate();
+
+    const normalizeRegion = (region: string): string => {
+        return region
+            .replace('서울특별시', '서울')
+            .replace('부산광역시', '부산')
+            .replace('대구광역시', '대구')
+            .replace('인천광역시', '인천')
+            .replace('광주광역시', '광주')
+            .replace('대전광역시', '대전')
+            .replace('울산광역시', '울산')
+            .replace('세종특별자치시', '세종')
+            .replace('제주특별자치도', '제주')
+            .replace('경기도', '경기')
+            .replace('강원도', '강원')
+            .replace('충청북도', '충북')
+            .replace('충청남도', '충남')
+            .replace('전라북도', '전북')
+            .replace('전라남도', '전남')
+            .replace('경상북도', '경북')
+            .replace('경상남도', '경남');
+    };
 
     const postClickHandler = (jobId : number) => {
         if(jobId <= 0 && jobId === null){
@@ -22,6 +47,31 @@ const Search: React.FC = () => {
         }
         navigate(`/consulting/${jobId}`);
         return;
+    };
+
+    // todo: job에 필터하도록 수정해야함
+    const handleRegionClick = async (region: string) => {
+        if (region === selectedRegion || region === '') {
+            setSelectedRegion('');
+            setFilteredResults([]); // 필터 해제
+            return;
+        }
+
+        setSelectedRegion(region);
+
+        const norm = normalizeRegion(region);
+
+        const filtered = results.filter(job => {
+            if (!job.location) return false;
+
+            if (norm === '광주' && job.location.includes('경기')) {
+                return false;
+            }
+
+            return job.location.includes(norm);
+        });
+
+        setFilteredResults(filtered);
     };
 
     useEffect(() => {
@@ -79,7 +129,7 @@ const Search: React.FC = () => {
     }, [visibleCount, results.length]);
 
     const renderResults = (): React.ReactNode => {
-        const jobsToRender = results.slice(0, visibleCount);
+        const jobsToRender = (filteredResults.length > 0 ? filteredResults : results).slice(0, visibleCount);
 
         if (results.length === 0) {
             return (
@@ -98,9 +148,10 @@ const Search: React.FC = () => {
         return (
             <>
                 {jobsToRender.map(job => (
+                    // eslint-disable-next-line jsx-a11y/anchor-is-valid
                     <a
                         key={job.id}
-                        href={job.link}
+                        href={'#'}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="rect-card"
@@ -117,9 +168,6 @@ const Search: React.FC = () => {
                                 </div>
                             </div>
                             <div className="meta-right">
-                                {job.views !== undefined && (
-                                    <div className="views">조회수 {job.views.toLocaleString()}회</div>
-                                )}
                                 <div className="deadline">{job.deadline}</div>
                             </div>
                         </div>
@@ -137,10 +185,15 @@ const Search: React.FC = () => {
                     <div className="list-container">
                         {renderResults()}
                     </div>
-                    <div className="graphic">여백</div>
+                    <div className="region-map">
+                        <Map
+                            onRegionClick={handleRegionClick}
+                            selectedRegion={selectedRegion}
+                        />
+                    </div>
                 </div>
             </div>
-            <Footer />
+            <Footer/>
         </div>
     );
 };

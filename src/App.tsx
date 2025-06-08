@@ -27,7 +27,7 @@ function App() {
 
     const navigate = useNavigate();
 
-    const activeTabHandler = (menu: 1 | 2 | 3 | 4) => {
+    const activeTabHandler: (tabIndex: 1 | 2 | 3 | 4) => void = (menu: 1 | 2 | 3 | 4) => {
         let newTab: 'Top100' | 'Entry' | 'MyJob' | 'Regional';
         if (menu === 1) {
             newTab = 'Top100';
@@ -43,7 +43,7 @@ function App() {
         } else {
             newTab = 'Regional';
         }
-        
+
         if (activeTab !== newTab) {
             setActiveTab(newTab);
         }
@@ -90,7 +90,7 @@ function App() {
                 />
                 <Route
                     path="/signin"
-                    element={<Signin userId={userId} setUserId={setUserId} checkToken={checkToken}/>}
+                    element={<Signin setUserId={setUserId} checkToken={checkToken}/>}
                 />
                 <Route
                     path="/agreement"

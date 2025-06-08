@@ -3,11 +3,11 @@ import React, { useState, useEffect } from 'react';
 import './Map.css';
 
 import type {
-  Feature,
-  FeatureCollection,
-  Geometry,
-  GeoJsonProperties
-} from 'geojson';   // 👈 타입만 가져오기
+    Feature,
+    FeatureCollection,
+    Geometry,
+    GeoJsonProperties
+} from 'geojson';   // 타입만 가져오기
 
 type GeoFeatureCollection = FeatureCollection<Geometry, GeoJsonProperties>;
 type GeoFeature           = Feature<Geometry, GeoJsonProperties>;
@@ -16,8 +16,6 @@ interface Props {
     onRegionClick: (region: string) => void;
     selectedRegion?: string;
 }
-
-
 
 interface Region {
     name: string;
@@ -50,17 +48,17 @@ const REGION_COLORS: Record<string, string> = {
 
 //호버하면 지역이름 맨 위로
 function bringToFront(el: SVGGraphicsElement | null) {
-  if (el && el.parentNode) {
-    el.parentNode.appendChild(el);   // 부모의 마지막 자식 → 제일 위로
-  }
+    if (el && el.parentNode) {
+        el.parentNode.appendChild(el);   // 부모의 마지막 자식 → 제일 위로
+    }
 }
 
 function toFeatureCollection(
-  data: GeoFeatureCollection | GeoFeature
+    data: GeoFeatureCollection | GeoFeature
 ): GeoFeatureCollection {
-  return data.type === 'Feature'
-    ? { type: 'FeatureCollection', features: [data] }
-    : data;
+    return data.type === 'Feature'
+        ? { type: 'FeatureCollection', features: [data] }
+        : data;
 }
 
 const Map: React.FC<Props> = ({ onRegionClick, selectedRegion }) => {
@@ -86,30 +84,30 @@ const Map: React.FC<Props> = ({ onRegionClick, selectedRegion }) => {
                     import('topojson-client')
                 ]);
 
-                 //TopoJSON 로드 & GeoJSON 변환 ---------------------------------
+                //TopoJSON 로드 & GeoJSON 변환 ---------------------------------
                 const topojsonData = await (await fetch('/data/korea-map-svg.json')).json();
                 const objectKey    = Object.keys(topojsonData.objects)[0];
                 const geoJsonRaw = topojsonModule.feature(
-                  topojsonData,
-                  topojsonData.objects[objectKey]
+                    topojsonData,
+                    topojsonData.objects[objectKey]
                 ) as GeoFeatureCollection | GeoFeature;
 
                 const geoJsonData = toFeatureCollection(geoJsonRaw);
 
                 if (geoJsonData.features.length === 0) {
-                  throw new Error('GeoJSON features가 비어있습니다');
+                    throw new Error('GeoJSON features가 비어있습니다');
                 }
 
                 // SVG 크기에 맞는 projection 생성
                 const width  = 400;
                 const height = 500;
 
-                 const projection = d3Module
-                      .geoIdentity()
-                      .reflectY(true)
-                      .fitSize([width, height], geoJsonData);
+                const projection = d3Module
+                    .geoIdentity()
+                    .reflectY(true)
+                    .fitSize([width, height], geoJsonData);
 
-                 const pathGenerator = d3Module.geoPath().projection(projection);
+                const pathGenerator = d3Module.geoPath().projection(projection);
 
                 console.log(`${geoJsonData.features.length}개 지역 처리 시작...`);
 
@@ -213,7 +211,7 @@ const Map: React.FC<Props> = ({ onRegionClick, selectedRegion }) => {
         };
 
         return displayNameMap[fullName] ||
-               fullName.replace(/특별시|광역시|특별자치시|특별자치도/g, '');
+            fullName.replace(/특별시|광역시|특별자치시|특별자치도/g, '');
     };
 
     if (isLoading) {
@@ -242,7 +240,7 @@ const Map: React.FC<Props> = ({ onRegionClick, selectedRegion }) => {
 
             {error && (
                 <div className="error-message">
-                    <span>⚠️ {error}</span>
+                    <span>{error}</span>
                 </div>
             )}
 
@@ -261,12 +259,12 @@ const Map: React.FC<Props> = ({ onRegionClick, selectedRegion }) => {
 
                     return (
                         <g
-                          key={region.id}
-                          onMouseEnter={(e) => {
-                            handleMouseEnter(region.id);        // 기존 hover state
-                            bringToFront(e.currentTarget);      // DOM 맨 뒤(=맨 위)로 이동
-                          }}
-                          onMouseLeave={handleMouseLeave}
+                            key={region.id}
+                            onMouseEnter={(e) => {
+                                handleMouseEnter(region.id);        // 기존 hover state
+                                bringToFront(e.currentTarget);      // DOM 맨 뒤(=맨 위)로 이동
+                            }}
+                            onMouseLeave={handleMouseLeave}
                         >
                             <path
                                 d={region.path}
@@ -286,8 +284,8 @@ const Map: React.FC<Props> = ({ onRegionClick, selectedRegion }) => {
                                     filter: isHovered ?
                                         'drop-shadow(3px 3px 6px rgba(0,0,0,0.3))' :
                                         isSelected ?
-                                        'drop-shadow(2px 2px 4px rgba(0,0,0,0.2))' :
-                                        'drop-shadow(1px 1px 2px rgba(0,0,0,0.1))',
+                                            'drop-shadow(2px 2px 4px rgba(0,0,0,0.2))' :
+                                            'drop-shadow(1px 1px 2px rgba(0,0,0,0.1))',
                                     transform: isHovered ? 'scale(1.02)' : 'scale(1)',
                                     transformOrigin: 'center'
                                 }}
@@ -299,24 +297,24 @@ const Map: React.FC<Props> = ({ onRegionClick, selectedRegion }) => {
 
                             {/* 지역명 텍스트 */}
                             <text
-                              x={region.center.x}
-                              y={region.center.y}
-                              className="region-label"
-                              textAnchor="middle"
-                              dominantBaseline="middle"
-                              fontSize={isSelected ? '10' : '9'}
-                              fontWeight={isSelected ? '800' : '700'}
-                              fill={isSelected ? '#ffffff' : '#1f2937'}
-                              style={{
-                                /* ✨ HERE ------------- */
-                                opacity: isHovered || isSelected ? 1 : 0,
-                                transition: 'opacity .25s ease',
-                                /* 기존 속성 유지 */
-                                pointerEvents: 'none',
-                                userSelect: 'none',
-                              }}
+                                x={region.center.x}
+                                y={region.center.y}
+                                className="region-label"
+                                textAnchor="middle"
+                                dominantBaseline="middle"
+                                fontSize={isSelected ? '10' : '9'}
+                                fontWeight={isSelected ? '800' : '700'}
+                                fill={isSelected ? '#ffffff' : '#1f2937'}
+                                style={{
+                                    /* ✨ HERE ------------- */
+                                    opacity: isHovered || isSelected ? 1 : 0,
+                                    transition: 'opacity .25s ease',
+                                    /* 기존 속성 유지 */
+                                    pointerEvents: 'none',
+                                    userSelect: 'none',
+                                }}
                             >
-                              {getDisplayName(region.name)}
+                                {getDisplayName(region.name)}
                             </text>
                         </g>
                     );

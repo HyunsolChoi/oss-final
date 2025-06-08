@@ -49,6 +49,8 @@ const Navbar: React.FC<Props> = ({ userId, activeTab, activeTabHandler }) => {
         const handleScroll = () => {
             if (window.location.pathname === '/') {
                 setScrolled(window.scrollY >= 490);
+            }else{
+                setScrolled(false);
             }
         };
 
@@ -102,48 +104,48 @@ const Navbar: React.FC<Props> = ({ userId, activeTab, activeTabHandler }) => {
                 <ul className={`navbar-links ${scrolled ? 'scrolled' : ''}`}>
                     <li>
                         <a href="#"
-                            className={scrolled && activeTab === 'Top100' ? 'scrolled-active' : ''}
-                            onClick={(e) => {
-                                e.preventDefault();
-                                activeTabHandler(1);
-                                window.scrollTo({ top: 515, behavior: 'smooth' });
-                            }}
+                           className={scrolled && activeTab === 'Top100' ? 'scrolled-active' : ''}
+                           onClick={(e) => {
+                               e.preventDefault();
+                               activeTabHandler(1);
+                               window.scrollTo({ top: 515, behavior: 'smooth' });
+                           }}
                         >
                             Top100
                         </a>
                     </li>
                     <li>
                         <a href="#"
-                            className={scrolled && activeTab === 'Entry' ? 'scrolled-active' : ''}
-                            onClick={(e) => {
-                                e.preventDefault();
-                                activeTabHandler(2);
-                                window.scrollTo({ top: 515, behavior: 'smooth' });
-                            }}
+                           className={scrolled && activeTab === 'Entry' ? 'scrolled-active' : ''}
+                           onClick={(e) => {
+                               e.preventDefault();
+                               activeTabHandler(2);
+                               window.scrollTo({ top: 515, behavior: 'smooth' });
+                           }}
                         >
                             신입
                         </a>
                     </li>
                     <li>
                         <a href="#"
-                            className={scrolled && activeTab === 'MyJob' ? 'scrolled-active' : ''}
-                            onClick={(e) => {
-                                e.preventDefault();
-                                activeTabHandler(3);
-                                window.scrollTo({ top: 515, behavior: 'smooth' });
-                            }}
+                           className={scrolled && activeTab === 'MyJob' ? 'scrolled-active' : ''}
+                           onClick={(e) => {
+                               e.preventDefault();
+                               activeTabHandler(3);
+                               window.scrollTo({ top: 515, behavior: 'smooth' });
+                           }}
                         >
                             나의 직무
                         </a>
                     </li>
                     <li>
                         <a href="#"
-                            className={scrolled && activeTab === 'Regional' ? 'scrolled-active' : ''}
-                            onClick={(e) => {
-                                e.preventDefault();
-                                activeTabHandler(4);
-                                window.scrollTo({ top: 515, behavior: 'smooth' });
-                            }}
+                           className={scrolled && activeTab === 'Regional' ? 'scrolled-active' : ''}
+                           onClick={(e) => {
+                               e.preventDefault();
+                               activeTabHandler(4);
+                               window.scrollTo({ top: 515, behavior: 'smooth' });
+                           }}
                         >
                             지역별
                         </a>

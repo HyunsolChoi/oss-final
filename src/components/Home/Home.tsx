@@ -218,21 +218,20 @@ const Home: React.FC<Props> = ({ userId, activeTab, activeTabHandler }) => {
                     <div className="recommend-wrapper">
                         <div className="recommend-container">
                             {recommendJobs.map(job => (
-                                <a
+                                <div
                                     key={job.id}
-                                    href={job.link}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
+                                    onClick={() => navigate(`/consulting/${job.id}`)}
                                     className="recommend-card"
+                                    style={{cursor: 'pointer'}}
                                 >
                                     <div className="title">{job.title}</div>
                                     <div className="company">{job.company}</div>
                                     <div className="deadline">기한: {job.deadline}</div>
-                                </a>
+                                </div>
                             ))}
                         </div>
                         {userId === '' && (
-                            <div className="glass-overlay" onClick={()=> navigate("/signin")}>
+                            <div className="glass-overlay" onClick={() => navigate("/signin")}>
                                 로그인 후 공고를 추천 받아보세요
                             </div>
                         )}

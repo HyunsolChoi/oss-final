@@ -9,14 +9,14 @@ import { signin } from '../../api/auth'
 import Footer from "../utils/Footer/Footer";
 
 interface Props {
-    userId: string;
     setUserId: (id: string) => void;
     checkToken: () =>  string | undefined;
 }
 
-const Signin: React.FC<Props> = ({ userId, setUserId, checkToken }) => {
+const Signin: React.FC<Props> = ({ setUserId, checkToken }) => {
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+    const [inputId, setInputId] = useState('');
     const [saveId, setSaveId] = useState(false);
 
     const navigate = useNavigate();
@@ -33,23 +33,25 @@ const Signin: React.FC<Props> = ({ userId, setUserId, checkToken }) => {
 
 
     const signHandler = async () => {
-        if (!userId || !password) {
+        if (!inputId || !password) {
             toast.error('아이디와 비밀번호를 입력해주세요');
             return;
         }
 
-        if(!isValidUserId(userId) || !isValidPwd(password)) {
+        if(!isValidUserId(inputId) || !isValidPwd(password)) {
             toast.error('유효하지 않은 아이디와 비밀번호 입니다');
             return;
         }
 
-        signin(userId, password)
+        signin(inputId, password)
             .then(result => {
                 if (result && 'token' in result) {
                     localStorage.setItem('token-careerfit', result.token);
 
+                    setUserId(inputId);
+
                     if (saveId) {
-                        localStorage.setItem('careerfit-id', userId);
+                        localStorage.setItem('careerfit-id', inputId);
                     } else {
                         localStorage.removeItem('careerfit-id');
                     }
@@ -76,7 +78,7 @@ const Signin: React.FC<Props> = ({ userId, setUserId, checkToken }) => {
 
     useEffect(() => {
         const validToken = checkToken();
-        
+
         if(validToken){ // 로그인 되어있으면 로그인 페이지 접근불가 하도록
             navigate('/');
             return;
@@ -98,8 +100,8 @@ const Signin: React.FC<Props> = ({ userId, setUserId, checkToken }) => {
                         <input
                             type="text"
                             placeholder="아이디"
-                            value={userId}
-                            onChange={(e) => setUserId(e.target.value)}
+                            value={inputId}
+                            onChange={(e) => setInputId(e.target.value)}
                         />
                     </div>
 
@@ -131,7 +133,6 @@ const Signin: React.FC<Props> = ({ userId, setUserId, checkToken }) => {
 
                     <div className="link-row">
                         <a href="/find_idpw?tab=1">아이디 찾기</a>
-                        {/* todo : 아이디 찾기 비밀번호 재설정 만들어야함 */}
                         <span>|</span>
                         <a href="/find_idpw?tab=2">비밀번호 재설정</a>
                         <span>|</span>

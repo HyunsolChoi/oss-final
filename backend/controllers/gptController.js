@@ -6,45 +6,45 @@ const APIKEY = process.env.OPENAI_API_KEY;
 async function getUserInfo(userId){
     try{
         const [userResult, skillsRows, regionRows, educationRows, gptRows] = await executeTransaction([
-                {
-                    query: `SELECT sector FROM users WHERE user_id = ?`,
-                    params: [userId],
-                },
-                {
-                    query: `
+            {
+                query: `SELECT sector FROM users WHERE user_id = ?`,
+                params: [userId],
+            },
+            {
+                query: `
                         SELECT s.name
                         FROM user_skills us
                         JOIN skills s ON us.skill_id = s.skill_id
                         WHERE us.user_id = ?
                     `,
-                    params: [userId],
-                },
-                {
-                    query: `
+                params: [userId],
+            },
+            {
+                query: `
                         SELECT ul.location_name
                         FROM user_location_mapping ulm
                         JOIN user_locations ul ON ulm.location_id = ul.location_id
                         WHERE ulm.user_id = ?
                     `,
-                    params: [userId],
-                },
-                {
-                    query: `
+                params: [userId],
+            },
+            {
+                query: `
                         SELECT ue.education_name
                         FROM user_educations_mapping uem
                         JOIN user_educations ue ON uem.user_education_id = ue.user_education_id
                         WHERE uem.user_id = ?
                     `,
-                    params: [userId],
-                },
-                {
-                    query: `
+                params: [userId],
+            },
+            {
+                query: `
                           SELECT ug.gpt_question, ug.user_answer
                           FROM user_gpt ug
                           WHERE ug.user_id = ?
                     `,
-                    params: [userId],
-                }
+                params: [userId],
+            }
         ]);
         const user = userResult[0];
 
@@ -71,8 +71,8 @@ async function callGPT(systemPrompt, userPrompt) {
         temperature: 0.5,
         max_tokens: 800,
         messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt},
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt},
         ],
     };
 
@@ -91,9 +91,9 @@ async function callGPT(systemPrompt, userPrompt) {
 
         //HTTP 상태 코드가 OK(200~299)가 아닐 경우, 에러 던지기
         if (!response.ok) {
-          const errBody = await response.text();
-          console.error(`[OpenAI API Error] Status: ${response.status}, Body: ${errBody}`);
-          return "";
+            const errBody = await response.text();
+            console.error(`[OpenAI API Error] Status: ${response.status}, Body: ${errBody}`);
+            return "";
         }
 
         const resultJSON = await response.json();
@@ -109,7 +109,7 @@ async function callGPT(systemPrompt, userPrompt) {
 
 // AGENT 채용공고 개요
 async function summaryAgent(job) {
-  const systemPrompt = `
+    const systemPrompt = `
         너는 채용공고 요약 전문가야.
         아래 JSON 형태의 채용공고 정보를 받고, 아래의 포맷으로 깔끔하게 한국어로 요약해줘.
         1) 직무 분야
@@ -118,8 +118,8 @@ async function summaryAgent(job) {
         3) 근무 지역
     `;
 
-  // JSON을 문자열로 변환하여 프롬프트에 전달
-  const userPrompt = `
+    // JSON을 문자열로 변환하여 프롬프트에 전달
+    const userPrompt = `
         "jobInfo": {
             "jobPostingTItle": ${job.title},
             "companyName": ${job.company},
@@ -129,12 +129,12 @@ async function summaryAgent(job) {
         }
   `;
 
-  return await callGPT(systemPrompt, userPrompt);
+    return await callGPT(systemPrompt, userPrompt);
 }
 
 // AGENT 사용자 적합도 확인
 async function fitAgent(job, sector, skills, regions, educations, gpt_questions, user_answer) {
-  const systemPrompt = `
+    const systemPrompt = `
   너는 경력 적합도를 판단하는 컨설팅 전문가야.
     아래 두 JSON을 비교해서,
       1) 사용자와 공고의 기술 매칭 비율(%)
@@ -159,7 +159,7 @@ async function fitAgent(job, sector, skills, regions, educations, gpt_questions,
       (적합도 등급만 출력)
     `;
 
-  const userPrompt = `
+    const userPrompt = `
     "jobInfo" : {
         "jobPostingTItle": ${job.title},
         "companyName": ${job.company},
@@ -195,7 +195,7 @@ async function fitAgent(job, sector, skills, regions, educations, gpt_questions,
       ]
     `;
 
-  return await callGPT(systemPrompt, userPrompt);
+    return await callGPT(systemPrompt, userPrompt);
 }
 
 // AGENT 사용자와 채용 차이 비교
@@ -244,7 +244,7 @@ async function gapAgent(job, sector, skills, regions, educations, gpt_questions,
           ]
     `;
 
-  return await callGPT(systemPrompt, userPrompt);
+    return await callGPT(systemPrompt, userPrompt);
 }
 
 // REQUEST Multi agent 응답
@@ -252,15 +252,15 @@ async function reqMultiAgent(sector, skills, regions, educations, gpt_questions,
     try {
         // 3개 에이전트 동시에 호출
         const [summaryResult, fitResult, gapResult] = await Promise.all([
-          summaryAgent(job),
-          fitAgent(job, sector, skills, regions, educations, gpt_questions, user_answer),
-          gapAgent(job, sector, skills, regions, educations, gpt_questions, user_answer),
+            summaryAgent(job),
+            fitAgent(job, sector, skills, regions, educations, gpt_questions, user_answer),
+            gapAgent(job, sector, skills, regions, educations, gpt_questions, user_answer),
         ]);
 
         return {
-          summary: summaryResult,
-          fit: fitResult,
-          gap: gapResult,
+            summary: summaryResult,
+            fit: fitResult,
+            gap: gapResult,
         };
     } catch (err) {
         console.error("[ERROR] reqMultiAgent:", err);
@@ -317,8 +317,6 @@ async function generateQuestions(job, skills, education, region) {
     }
 }
 
-
-//-----------------exports 함수들-----------------------
 // GET 컨설팅
 exports.getConsultingContext = async (req, res) => {
     const { userId, job } = req.body;
@@ -376,7 +374,6 @@ exports.generateGPTQuestions = async (req, res) => {
     }
 };
 
-// 현재는 사용되진 않는 API
 // 질문과 답변 저장 API => 혹시라도 질문 더 만다는 기능 추가로 활용 가능
 exports.saveQuestionsAndAnswers = async (req, res) => {
     const { userId, questions, answers } = req.body;

@@ -93,8 +93,8 @@ exports.getEntryLevelJobs = async (req, res) => {
     }
 };
 /**
-* 사용자 직무 관련 공고
-*/
+ * 사용자 직무 관련 공고
+ */
 exports.getMyJobs = async (req, res) => {
     const { userId } = req.body;
     if (!userId) {
@@ -171,58 +171,67 @@ exports.searchJobs = async (req, res) => {
     }
 
     const raw = query.trim();
-    // 1. 공백으로 분리한 뒤, 모두 2글자 이상인지 확인
+    // 공백으로 분리한 뒤, 모두 2글자 이상인지 확인
     const parts = raw.split(/\s+/);
     const keywords = parts.every(p => p.length >= 2) ? parts : [raw];
     const likeParams = keywords.map(k => `%${k}%`);
 
     try {
-        // 2. 제목 기반 검색
+        // 제목 기반 검색
         const [titleMatches] = await executeQuery(`
-            SELECT DISTINCT
-                j.job_posting_id AS id,
-                j.title, j.deadline, j.link, j.views,
-                c.company_name AS company,
-                GROUP_CONCAT(DISTINCT s.sector_name) AS sectors
-            FROM job_postings j
-            JOIN companies c ON j.company_id = c.company_id
-            LEFT JOIN job_posting_sectors jps ON j.job_posting_id = jps.job_posting_id
-            LEFT JOIN sectors s ON jps.sector_id = s.sector_id
-            WHERE ${keywords.map(() => 'j.title LIKE ?').join(' OR ')}
-            GROUP BY j.job_posting_id
-        `, likeParams);
+        SELECT DISTINCT
+            j.job_posting_id AS id,
+            j.title, j.deadline, j.link, j.views,
+            c.company_name AS company,
+            GROUP_CONCAT(DISTINCT s.sector_name) AS sectors,
+            GROUP_CONCAT(DISTINCT l.location_name SEPARATOR ', ') AS location
+        FROM job_postings j
+        JOIN companies c ON j.company_id = c.company_id
+        LEFT JOIN job_posting_sectors jps ON j.job_posting_id = jps.job_posting_id
+        LEFT JOIN sectors s ON jps.sector_id = s.sector_id
+        LEFT JOIN job_posting_locations jpl ON j.job_posting_id = jpl.job_posting_id
+        LEFT JOIN locations l ON jpl.location_id = l.location_id
+        WHERE ${keywords.map(() => 'j.title LIKE ?').join(' OR ')}
+        GROUP BY j.job_posting_id
+    `, likeParams);
 
-        // 3. 직무 기반 검색
+        // 직무 기반 검색
         const [sectorMatches] = await executeQuery(`
-            SELECT DISTINCT
-                j.job_posting_id AS id,
-                j.title, j.deadline, j.link, j.views,
-                c.company_name AS company,
-                GROUP_CONCAT(DISTINCT s.sector_name) AS sectors
-            FROM job_postings j
-            JOIN companies c ON j.company_id = c.company_id
-            JOIN job_posting_sectors jps ON j.job_posting_id = jps.job_posting_id
-            JOIN sectors s ON jps.sector_id = s.sector_id
-            WHERE ${keywords.map(() => 's.sector_name LIKE ?').join(' OR ')}
-            GROUP BY j.job_posting_id
-        `, likeParams);
+        SELECT DISTINCT
+            j.job_posting_id AS id,
+            j.title, j.deadline, j.link, j.views,
+            c.company_name AS company,
+            GROUP_CONCAT(DISTINCT s.sector_name) AS sectors,
+            GROUP_CONCAT(DISTINCT l.location_name SEPARATOR ', ') AS location
+        FROM job_postings j
+        JOIN companies c ON j.company_id = c.company_id
+        JOIN job_posting_sectors jps ON j.job_posting_id = jps.job_posting_id
+        JOIN sectors s ON jps.sector_id = s.sector_id
+        LEFT JOIN job_posting_locations jpl ON j.job_posting_id = jpl.job_posting_id
+        LEFT JOIN locations l ON jpl.location_id = l.location_id
+        WHERE ${keywords.map(() => 's.sector_name LIKE ?').join(' OR ')}
+        GROUP BY j.job_posting_id
+    `, likeParams);
 
-        // 4. 회사명 기반 검색
+        // 회사명 기반 검색
         const [companyMatches] = await executeQuery(`
-            SELECT DISTINCT
-                j.job_posting_id AS id,
-                j.title, j.deadline, j.link, j.views,
-                c.company_name AS company,
-                GROUP_CONCAT(DISTINCT s.sector_name) AS sectors
-            FROM job_postings j
-            JOIN companies c ON j.company_id = c.company_id
-            LEFT JOIN job_posting_sectors jps ON j.job_posting_id = jps.job_posting_id
-            LEFT JOIN sectors s ON jps.sector_id = s.sector_id
-            WHERE ${keywords.map(() => 'c.company_name LIKE ?').join(' OR ')}
-            GROUP BY j.job_posting_id
-        `, likeParams);
+        SELECT DISTINCT
+            j.job_posting_id AS id,
+            j.title, j.deadline, j.link, j.views,
+            c.company_name AS company,
+            GROUP_CONCAT(DISTINCT s.sector_name) AS sectors,
+            GROUP_CONCAT(DISTINCT l.location_name SEPARATOR ', ') AS location
+        FROM job_postings j
+        JOIN companies c ON j.company_id = c.company_id
+        LEFT JOIN job_posting_sectors jps ON j.job_posting_id = jps.job_posting_id
+        LEFT JOIN sectors s ON jps.sector_id = s.sector_id
+        LEFT JOIN job_posting_locations jpl ON j.job_posting_id = jpl.job_posting_id
+        LEFT JOIN locations l ON jpl.location_id = l.location_id
+        WHERE ${keywords.map(() => 'c.company_name LIKE ?').join(' OR ')}
+        GROUP BY j.job_posting_id
+    `, likeParams);
 
-        // 5. 순서대로 병합 + 중복 제거
+        // 병합 + 중복 제거
         const seen = new Set();
         const merged = [];
         for (const list of [titleMatches, sectorMatches, companyMatches]) {
@@ -233,6 +242,7 @@ exports.searchJobs = async (req, res) => {
                 }
             }
         }
+
 
         return res.json(merged);
     } catch (err) {
@@ -255,24 +265,31 @@ exports.getJobInfo = async (req, res) => {
     try {
         const [[job]] = await executeQuery(`
       SELECT
-        j.title,
-        c.company_name AS company,
-        j.deadline,
-        GROUP_CONCAT(DISTINCT l.location_name SEPARATOR ', ') AS location,
-        ed.education_level AS education,
-        GROUP_CONCAT(DISTINCT et.employment_type_name SEPARATOR ', ') AS employment_type,
-        GROUP_CONCAT(DISTINCT s.sector_name SEPARATOR ', ') AS sectors
-      FROM job_postings j
-      JOIN companies c ON j.company_id = c.company_id
-      LEFT JOIN job_posting_locations jpl ON j.job_posting_id = jpl.job_posting_id
-      LEFT JOIN locations l ON jpl.location_id = l.location_id
-      LEFT JOIN educations ed ON j.education_id = ed.education_id
-      LEFT JOIN job_posting_employment_types jpet ON j.job_posting_id = jpet.job_posting_id
-      LEFT JOIN employment_types et ON jpet.employment_type_id = et.employment_type_id
-      LEFT JOIN job_posting_sectors jps ON j.job_posting_id = jps.job_posting_id
-      LEFT JOIN sectors s ON jps.sector_id = s.sector_id
-      WHERE j.job_posting_id = ?
-      GROUP BY j.job_posting_id
+          j.job_posting_id AS id,
+          c.company_name AS company,
+          j.title,
+          j.link,
+          GROUP_CONCAT(DISTINCT l.location_name SEPARATOR '/ ') AS location,
+          GROUP_CONCAT(DISTINCT e.experience_level SEPARATOR '/ ') AS experience,
+          ed.education_level AS education,
+          GROUP_CONCAT(DISTINCT et.employment_type_name SEPARATOR '/ ') AS employmentType,
+          j.salary,
+          j.views,
+          GROUP_CONCAT(DISTINCT s.sector_name SEPARATOR '/ ') AS sectors,
+          j.deadline
+        FROM job_postings j
+        JOIN companies c ON j.company_id = c.company_id
+        LEFT JOIN job_posting_locations jpl ON j.job_posting_id = jpl.job_posting_id
+        LEFT JOIN locations l ON jpl.location_id = l.location_id
+        LEFT JOIN job_posting_experiences jpe ON j.job_posting_id = jpe.job_posting_id
+        LEFT JOIN experiences e ON jpe.experience_id = e.experience_id
+        LEFT JOIN educations ed ON j.education_id = ed.education_id
+        LEFT JOIN job_posting_employment_types jpet ON j.job_posting_id = jpet.job_posting_id
+        LEFT JOIN employment_types et ON jpet.employment_type_id = et.employment_type_id
+        LEFT JOIN job_posting_sectors jps ON j.job_posting_id = jps.job_posting_id
+        LEFT JOIN sectors s ON jps.sector_id = s.sector_id
+        WHERE j.job_posting_id = ?
+        GROUP BY j.job_posting_id;
     `, [jobId]);
 
         if (!job) {
@@ -306,7 +323,7 @@ exports.getJobsByRegion = async (req, res) => {
         const likePatterns = buildRegionLikePatterns(region);       // ex) ["%경기%","%인천%"]
 
         const likePlaceholders =
-          likePatterns.map(() => 'l.location_name LIKE ?').join(' OR ') + ' OR l.location_name = ?';
+            likePatterns.map(() => 'l.location_name LIKE ?').join(' OR ') + ' OR l.location_name = ?';
 
         const query = `
           SELECT DISTINCT
@@ -336,5 +353,157 @@ exports.getJobsByRegion = async (req, res) => {
     } catch (err) {
         console.error('getJobsByRegion 오류:', err.message);
         res.status(500).json({ error: err.message });
+    }
+};
+
+// 조회수 증가 - 3분 내에 중복 조회 시 증가 하지않도록 함
+exports.increaseView = async (req, res) => {
+    const { jobId, userId } = req.body;
+
+    if (!jobId || !userId) {
+        return res.status(400).json({ success: false, message: 'jobId와 userId는 필수입니다.' });
+    }
+
+    try {
+        // 1. 기존 기록 확인
+        const [[existing]] = await executeQuery(
+            `SELECT viewed_at FROM manage_view WHERE user_id = ? AND job_posting_id = ?`,
+            [userId, jobId]
+        );
+
+        if (existing) {
+            const lastViewed = new Date(existing.viewed_at);
+            const now = new Date();
+            const diffMs = now.getTime() - lastViewed.getTime();
+            const diffMinutes = diffMs / (1000 * 60);
+
+            // 마지막 조회 3분 미만이면 조회수 증가 안함
+            if (diffMinutes < 3) {
+                return res.json({ success: true, message: '3분 이내 재조회 - 조회수 증가 생략' });
+            }
+        }
+
+        // 2. 조회 기록 갱신 (없으면 insert, 있으면 update)
+        await executeQuery(
+            `INSERT INTO manage_view (user_id, job_posting_id, viewed_at)
+             VALUES (?, ?, NOW())
+             ON DUPLICATE KEY UPDATE
+             viewed_at = VALUES(viewed_at)`,
+            [userId, jobId]
+        );
+
+        // 3. 조회수 증가
+        await executeQuery(
+            `UPDATE job_postings SET views = views + 1 WHERE job_posting_id = ?`,
+            [jobId]
+        );
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error('[increaseView] 오류:', err.message);
+        res.status(500).json({ success: false, message: '조회수 증가 중 오류 발생' });
+    }
+};
+
+
+// 즐겨찾기 여부 조회
+exports.checkBookmark = async (req, res) => {
+    const { userId, jobId } = req.query;
+
+    if (!userId || !jobId) {
+        return res.status(400).json({ success: false, message: 'userId와 jobId가 필요합니다.' });
+    }
+
+    try {
+        const [rows] = await executeQuery(
+            `SELECT 1 FROM bookmarks WHERE user_id = ? AND job_posting_id = ? LIMIT 1`,
+            [userId, jobId]
+        );
+
+        const isBookmarked = rows.length > 0;
+        return res.json({ success: true, bookmarked: isBookmarked });
+    } catch (e) {
+        console.error('checkBookmark 오류:', e.message);
+        return res.status(500).json({ success: false, message: '서버 오류' });
+    }
+};
+
+
+// 즐겨찾기 토글
+exports.toggleBookmark = async (req, res) => {
+    const { userId, jobId } = req.body;
+
+    if (!userId || !jobId) {
+        return res.status(400).json({ success: false, message: 'userId와 jobId가 필요합니다.' });
+    }
+
+    try {
+        // 현재 즐겨찾기 여부 확인
+        const [rows] = await executeQuery(
+            `SELECT 1 FROM bookmarks WHERE user_id = ? AND job_posting_id = ? LIMIT 1`,
+            [userId, jobId]
+        );
+
+        if (rows.length > 0) {
+            // 이미 즐겨찾기 된 경우 → 삭제
+            await executeQuery(
+                `DELETE FROM bookmarks WHERE user_id = ? AND job_posting_id = ?`,
+                [userId, jobId]
+            );
+            return res.json({ success: true, bookmarked: false });
+        } else {
+            // 즐겨찾기 추가
+            await executeQuery(
+                `INSERT INTO bookmarks (user_id, job_posting_id) VALUES (?, ?)`,
+                [userId, jobId]
+            );
+            return res.json({ success: true, bookmarked: true });
+        }
+    } catch (e) {
+        console.error('toggleBookmark 오류:', e.message);
+        return res.status(500).json({ success: false, message: '서버 오류' });
+    }
+};
+
+// 즐겨찾기 공고 조회
+exports.getBookmarkedJobs = async (req, res) => {
+    const { userId } = req.body;
+
+    if (!userId) {
+        return res.status(400).json({ success: false, message: 'userId는 필수입니다.' });
+    }
+
+    try {
+        const [rows] = await executeQuery(
+            `
+            SELECT
+                j.job_posting_id AS id,
+                j.title,
+                j.deadline,
+                j.link,
+                c.company_name AS company,
+                GROUP_CONCAT(DISTINCT e.experience_level SEPARATOR '/ ') AS experience,
+                GROUP_CONCAT(DISTINCT l.location_name SEPARATOR '/ ') AS location,
+                GROUP_CONCAT(DISTINCT et.employment_type_name SEPARATOR '/ ') AS employmentType
+            FROM bookmarks b
+            JOIN job_postings j ON b.job_posting_id = j.job_posting_id
+            JOIN companies c ON j.company_id = c.company_id
+            LEFT JOIN job_posting_experiences jpe ON j.job_posting_id = jpe.job_posting_id
+            LEFT JOIN experiences e ON jpe.experience_id = e.experience_id
+            LEFT JOIN job_posting_locations jpl ON j.job_posting_id = jpl.job_posting_id
+            LEFT JOIN locations l ON jpl.location_id = l.location_id
+            LEFT JOIN job_posting_employment_types jpet ON j.job_posting_id = jpet.job_posting_id
+            LEFT JOIN employment_types et ON jpet.employment_type_id = et.employment_type_id
+            WHERE b.user_id = ?
+            GROUP BY j.job_posting_id
+            ORDER BY b.created_at DESC
+            `,
+            [userId]
+        );
+
+        return res.json({ success: true, jobs: rows });
+    } catch (e) {
+        console.error('getBookmarkedJobs 오류:', e.message);
+        return res.status(500).json({ success: false, message: '서버 오류' });
     }
 };

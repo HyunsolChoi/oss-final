@@ -38,6 +38,13 @@ exports.authSignin = async (req, res) => {
 
         const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000);
 
+        // 로그인 기록 저장
+        const now = new Date();
+        await executeQuery(
+            `INSERT INTO login_history (user_id, login_time) VALUES (?, ?)`,
+            [userId, now]
+        );
+
         await executeQuery(
             `INSERT INTO user_tokens (user_id, refresh_token, expires_at)
              VALUES (?, ?, ?)
