@@ -20,6 +20,8 @@ const Bookmark: React.FC<Props> = ({ checkToken }) => {
         const id = checkToken();
         if (!id) {
             toast.error('로그인이 필요합니다.');
+            navigate('/signin');
+            window.location.reload();
             return;
         }
 
