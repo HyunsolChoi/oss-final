@@ -3,8 +3,11 @@ import {useNavigate, useParams} from "react-router-dom";
 import './Consulting.css';
 import {getConsulting} from '../../api/gpt';
 import {toast} from "react-toastify";
-import {getJobInfo, increaseJobView, Job} from "../../api/jobs";
+import {getJobInfo, increaseJobView, isBookmarked, Job, toggleBookmark} from "../../api/jobs";
 import Footer from "../utils/Footer/Footer";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faStar } from '@fortawesome/free-solid-svg-icons';
+
 
 interface Props {
     checkToken: () =>  string | undefined;
@@ -16,8 +19,19 @@ const Consulting: React.FC<Props> = ({checkToken}) => {
     const [loading, setLoading] = useState(true);
     const { jobId } = useParams<{ jobId: string }>();
     const [uId, setUId] = useState('');
+    const [starred, setStarred] = useState(false);
 
     const navigate = useNavigate();
+
+    const toggleBookmarkHandler = async () => {
+        if (!jobInfo) return;
+
+        try {
+            await toggleBookmark(uId, Number(jobId));
+        } catch (error) {
+            console.error('즐겨찾기 토글 중 오류:', error);
+        }
+    };
 
     // todo: 지피티 답변 정보 저장 기능 구현하기
     const handleRetry = async () => {
@@ -60,7 +74,16 @@ const Consulting: React.FC<Props> = ({checkToken}) => {
         (async () => {
             try {
                 const job = await getJobInfo(Number(jobId));
+
+                if (!job || !job.id || !job.title || !job.company) {
+                    toast.error("유효하지 않은 공고입니다");
+                    navigate('/');
+                    return;
+                }
+
                 setJobInfo(job); // job 정보 상태 저장
+
+                setStarred(await isBookmarked(validId, Number(jobId)));
 
                 // 조회수 증가
                 await increaseJobView(Number(jobId), validId);
@@ -89,7 +112,19 @@ const Consulting: React.FC<Props> = ({checkToken}) => {
             <div className="consulting-container">
                 {uId !== '' && jobInfo && (
                     <div className="consulting-info-grid">
-                        <div className="info-title">{jobInfo.title || '미기재'}</div>
+                        <div className="info-title-wrapper">
+                            <div className="info-title">{jobInfo.title}</div>
+                            <button
+                                className="star-button"
+                                onClick={async () => {
+                                    setStarred(prev => !prev);
+                                    await toggleBookmarkHandler();
+                                }}
+                            >
+                                <FontAwesomeIcon icon={faStar} color={starred ? '#6366f1' : '#ccc'}/>
+                            </button>
+                        </div>
+
 
                         <div className="info-pair">
                             <div className="info-box"><strong>회사명</strong><span>{jobInfo.company || '미기재'}</span></div>
