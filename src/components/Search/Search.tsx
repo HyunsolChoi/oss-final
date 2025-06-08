@@ -31,7 +31,7 @@ const Search: React.FC = () => {
             .replace('세종특별자치시', '세종')
             .replace('제주특별자치도', '제주')
             .replace('경기도', '경기')
-            .replace('강원도', '강원')
+            .replace('강원특별자치도', '강원')
             .replace('충청북도', '충북')
             .replace('충청남도', '충남')
             .replace('전라북도', '전북')
@@ -60,7 +60,6 @@ const Search: React.FC = () => {
         setSelectedRegion(region);
 
         const norm = normalizeRegion(region);
-
         const filtered = results.filter(job => {
             if (!job.location) return false;
 
@@ -129,9 +128,9 @@ const Search: React.FC = () => {
     }, [visibleCount, results.length]);
 
     const renderResults = (): React.ReactNode => {
-        const jobsToRender = (filteredResults.length > 0 ? filteredResults : results).slice(0, visibleCount);
+        const jobsToRender = (filteredResults.length >= 0 ? filteredResults : results).slice(0, visibleCount);
 
-        if (results.length === 0) {
+        if (results.length === 0 || filteredResults.length === 0) {
             return (
                 <div style={{
                     width: '100%',
