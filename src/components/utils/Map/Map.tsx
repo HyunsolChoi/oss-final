@@ -109,8 +109,6 @@ const Map: React.FC<Props> = ({ onRegionClick, selectedRegion }) => {
 
                 const pathGenerator = d3Module.geoPath().projection(projection);
 
-                console.log(`${geoJsonData.features.length}개 지역 처리 시작...`);
-
                 // 각 feature를 Region 객체로 변환
                 const regionData: Region[] = geoJsonData.features
                     .map((feature: GeoFeature, index: number) => {
@@ -169,7 +167,6 @@ const Map: React.FC<Props> = ({ onRegionClick, selectedRegion }) => {
                     throw new Error('처리된 지역 데이터가 없습니다');
                 }
 
-                console.log(`지역 데이터 처리 완료: ${regionData.length}개`);
                 setRegions(regionData);
 
             } catch (err) {

@@ -2,15 +2,21 @@
 import React, {useEffect, useRef, useState} from 'react'
 import {useLocation, useNavigate, useSearchParams} from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCircleUser, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
+import {
+    faBookmark,
+    faCircleUser,
+    faGear,
+    faMagnifyingGlass,
+    faRightFromBracket
+} from '@fortawesome/free-solid-svg-icons';
 import {signout} from '../../../api/auth'
 import './Navbar.css'
 import {toast} from "react-toastify";
 
 interface Props {
     userId: string;
-    activeTab: 'Top100' | 'Entry' | 'MyJob' | 'Regional';
-    activeTabHandler: (menu: 1 | 2 | 3 | 4) => void;
+    activeTab: 'Top100' | 'Entry' | 'MyJob';
+    activeTabHandler: (menu: 1 | 2 | 3) => void;
 }
 
 const Navbar: React.FC<Props> = ({ userId, activeTab, activeTabHandler }) => {
@@ -94,6 +100,7 @@ const Navbar: React.FC<Props> = ({ userId, activeTab, activeTabHandler }) => {
         const trimmed = searchInput.trim();
         if (trimmed) {
             navigate(`/search?query=${encodeURIComponent(trimmed)}`);
+            window.location.reload();
         }
     };
 
@@ -103,6 +110,7 @@ const Navbar: React.FC<Props> = ({ userId, activeTab, activeTabHandler }) => {
                 <div className="navbar-logo" onClick={() => onLogoClick()}>CareerFit</div>
                 <ul className={`navbar-links ${scrolled ? 'scrolled' : ''}`}>
                     <li>
+                        {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
                         <a href="#"
                            className={scrolled && activeTab === 'Top100' ? 'scrolled-active' : ''}
                            onClick={(e) => {
@@ -115,6 +123,7 @@ const Navbar: React.FC<Props> = ({ userId, activeTab, activeTabHandler }) => {
                         </a>
                     </li>
                     <li>
+                        {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
                         <a href="#"
                            className={scrolled && activeTab === 'Entry' ? 'scrolled-active' : ''}
                            onClick={(e) => {
@@ -127,6 +136,7 @@ const Navbar: React.FC<Props> = ({ userId, activeTab, activeTabHandler }) => {
                         </a>
                     </li>
                     <li>
+                        {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
                         <a href="#"
                            className={scrolled && activeTab === 'MyJob' ? 'scrolled-active' : ''}
                            onClick={(e) => {
@@ -136,18 +146,6 @@ const Navbar: React.FC<Props> = ({ userId, activeTab, activeTabHandler }) => {
                            }}
                         >
                             나의 직무
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#"
-                           className={scrolled && activeTab === 'Regional' ? 'scrolled-active' : ''}
-                           onClick={(e) => {
-                               e.preventDefault();
-                               activeTabHandler(4);
-                               window.scrollTo({ top: 515, behavior: 'smooth' });
-                           }}
-                        >
-                            지역별
                         </a>
                     </li>
                 </ul>
@@ -169,21 +167,23 @@ const Navbar: React.FC<Props> = ({ userId, activeTab, activeTabHandler }) => {
                 </div>
                 {userId !== '' ? (
                     <div className="user-menu-wrapper" ref={dropdownRef}>
-                        <FontAwesomeIcon
-                            className="user-icon"
-                            icon={faCircleUser}
-                            onClick={() => setShowDropdown(prev => !prev)}
-                        />
+                        <div className="user-trigger" onClick={() => setShowDropdown(prev => !prev)}>
+                            <FontAwesomeIcon icon={faCircleUser} className="user-icon"/>
+                            <span className="user-id-inline">{userId} 님</span>
+                        </div>
                         {showDropdown && (
                             <div className="user-dropdown">
-                                <div className="user-id" onClick={() => navigate('/profile')}
-                                     style={{cursor: 'pointer'}}>
-                                    {userId}
+                                <div className="user-item" onClick={() => navigate('/profile')}>
+                                <FontAwesomeIcon icon={faGear} className="user-icon-left"/>
+                                    <span>정보 수정</span>
                                 </div>
-                                <div className="logout" onClick={() => {
-                                    signoutHandler();
-                                }}>
-                                    로그아웃
+                                <div className="user-item" onClick={() => navigate('/bookmark')}>
+                                    <FontAwesomeIcon icon={faBookmark} className="user-icon-left"/>
+                                    <span>즐겨찾기</span>
+                                </div>
+                                <div className="user-item logout" onClick={signoutHandler}>
+                                    <FontAwesomeIcon icon={faRightFromBracket} className="user-icon-left"/>
+                                    <span>로그아웃</span>
                                 </div>
                             </div>
                         )}
