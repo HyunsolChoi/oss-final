@@ -35,15 +35,8 @@ const Home: React.FC<Props> = ({ userId, activeTab, activeTabHandler }) => {
     }
 
     const handleRegionClick = async (region: string) => {
-        if (region === selectedRegion) {
+        if (region === selectedRegion || region === '') {
             // 같은 지역 클릭 시 필터 해제
-            setSelectedRegion('');
-            setRegionalJobs([]);
-            return;
-        }
-
-        if (region === '') {
-            // 클리어 버튼 클릭
             setSelectedRegion('');
             setRegionalJobs([]);
             return;
