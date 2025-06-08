@@ -422,23 +422,17 @@ const Signup: React.FC<Props> = ({ email }) => {
                 <>
                     <div>
                         <div className="input-description">
-                            <FontAwesomeIcon icon={faQuestionCircle} className="input-icon" />
                             아래 질문에 대해 답변해 주세요
                         </div>
 
                         {questions.map((question, idx) => (
-                            <div key={idx} style={{ marginBottom: '20px' }}>
-                                <label className="question-label" style={{
-                                    display: 'block',
-                                    marginBottom: '8px',
-                                    fontWeight: 'bold',
-                                    color: '#333'
-                                }}>
+                            <div key={idx} className="question-block">
+                                <label className="question-label">
                                     {idx + 1}. {question}
                                 </label>
-                                <div className="input-group">
-                                    <input
-                                        type="text"
+
+                                <div className="input-gpt-answer">
+                                    <textarea
                                         placeholder="답변을 입력하세요"
                                         value={answers[idx] || ''}
                                         onChange={(e) => {
@@ -446,8 +440,13 @@ const Signup: React.FC<Props> = ({ email }) => {
                                             newAnswers[idx] = e.target.value;
                                             setAnswers(newAnswers);
                                         }}
-                                        style={{ paddingLeft: '12px' }}
+                                        maxLength={200} //200자 제한
+                                        rows={3}
+                                        style={{ paddingLeft: '12px'}}
                                     />
+                                <div className="char-count">
+                                    { (answers[idx] || '').length} / 200
+                                </div>
                                 </div>
                             </div>
                         ))}
