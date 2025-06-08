@@ -22,7 +22,6 @@ const Home: React.FC<Props> = ({ userId, activeTab, activeTabHandler }) => {
     const [selectedRegion, setSelectedRegion] = useState<string>('');
 
     const [visibleCount, setVisibleCount] = useState(50);
-    const [isLoadingRegional, setIsLoadingRegional] = useState(false);
 
     const navigate = useNavigate();
     const loadMoreRef = React.useRef<HTMLDivElement | null>(null);
@@ -51,8 +50,8 @@ const Home: React.FC<Props> = ({ userId, activeTab, activeTabHandler }) => {
             .replace('강원특별자치도', '강원')
             .replace('충청북도', '충북')
             .replace('충청남도', '충남')
-            .replace('전라북도', '전북')
-            .replace('전라남도', '전남')
+            .replace('전북특별자치도', '전북')
+            .replace('전라남도', '전 남')
             .replace('경상북도', '경북')
             .replace('경상남도', '경남');
     };
@@ -66,7 +65,6 @@ const Home: React.FC<Props> = ({ userId, activeTab, activeTabHandler }) => {
                         : myJobs
 
         setSelectedRegion(region);
-        setIsLoadingRegional(true);
 
         try {
             const norm = normalizeRegion(region);
@@ -84,8 +82,6 @@ const Home: React.FC<Props> = ({ userId, activeTab, activeTabHandler }) => {
         } catch (error) {
             console.error('지역별 공고 조회 실패:', error);
             toast.error('지역별 공고를 불러오는데 실패했습니다');
-        } finally {
-            setIsLoadingRegional(false);
         }
     };
 
