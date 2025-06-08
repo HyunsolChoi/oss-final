@@ -67,7 +67,7 @@ const Search: React.FC = () => {
                 return false;
             }
 
-            return job.location.includes(norm);
+            return job.location.includes(norm) || job.location.includes('전국');
         });
 
 
