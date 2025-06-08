@@ -14,6 +14,7 @@ import Email from "./components/Signup/Email";
 import Profile from "./components/Profile/Profile";
 import Search from "./components/Search/Search";
 import FindIdPw from "./components/Signin/FindIdPw";
+import Bookmark from "./components/Bookmark/Bookmark";
 
 interface JwtPayload {
     userId: string;
@@ -116,6 +117,10 @@ function App() {
                 <Route
                     path="/find_idpw"
                     element={<FindIdPw checkToken={checkToken}/>}>
+                </Route>
+                <Route
+                    path="/bookmark"
+                    element={<Bookmark checkToken={checkToken}/>}>
                 </Route>
             </Routes>
             <ToastContainer
