@@ -6,6 +6,7 @@ const emailAuthRouter = require('./routes/emailAuth');
 const authRouter = require('./routes/auth');
 const userRouter = require('./routes/user');
 const gptRouter = require('./routes/gpt');
+const bookmarkRouter = require('./routes/bookmark');
 const { startCleanupScheduler } = require('./Utils/cleaner');
 
 const app = express();
@@ -22,6 +23,8 @@ app.use('/api/auth', authRouter);
 app.use('/api/user', userRouter);
 // gpt 결과 라우터
 app.use('/api/gpt', gptRouter);
+// 즐겨찾기 라우터
+app.use('/api/bookmark', bookmarkRouter);
 
 startCleanupScheduler();
 

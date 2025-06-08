@@ -22,6 +22,7 @@ const Home: React.FC<Props> = ({ userId, activeTab, activeTabHandler }) => {
     const [selectedRegion, setSelectedRegion] = useState<string>('');
 
     const [visibleCount, setVisibleCount] = useState(50);
+    const [isLoadingRegional, setIsLoadingRegional] = useState(false);
 
     const navigate = useNavigate();
     const loadMoreRef = React.useRef<HTMLDivElement | null>(null);
@@ -58,13 +59,14 @@ const Home: React.FC<Props> = ({ userId, activeTab, activeTabHandler }) => {
 
     const handleRegionClick = async (region: string) => {
         const currentJobs =
-                activeTab === 'Top100'
-                    ? topJobs
-                    : activeTab === 'Entry'
-                        ? entryJobs
-                        : myJobs
+            activeTab === 'Top100'
+                ? topJobs
+                : activeTab === 'Entry'
+                    ? entryJobs
+                    : myJobs
 
         setSelectedRegion(region);
+        setIsLoadingRegional(true);
 
         try {
             const norm = normalizeRegion(region);
@@ -82,6 +84,8 @@ const Home: React.FC<Props> = ({ userId, activeTab, activeTabHandler }) => {
         } catch (error) {
             console.error('지역별 공고 조회 실패:', error);
             toast.error('지역별 공고를 불러오는데 실패했습니다');
+        } finally {
+            setIsLoadingRegional(false);
         }
     };
 
@@ -118,6 +122,7 @@ const Home: React.FC<Props> = ({ userId, activeTab, activeTabHandler }) => {
         return (
             <>
                 {jobsToRender.map(job => (
+                    // eslint-disable-next-line jsx-a11y/anchor-is-valid
                     <a
                         key={job.id}
                         href={'#'}
