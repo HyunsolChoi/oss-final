@@ -34,7 +34,7 @@ const Search: React.FC = () => {
             .replace('강원특별자치도', '강원')
             .replace('충청북도', '충북')
             .replace('충청남도', '충남')
-            .replace('전라북도', '전북')
+            .replace('전북특별자치도', '전북')
             .replace('전라남도', '전남')
             .replace('경상북도', '경북')
             .replace('경상남도', '경남');
