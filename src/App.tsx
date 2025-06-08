@@ -21,27 +21,25 @@ interface JwtPayload {
 }
 
 function App() {
-    const [activeTab, setActiveTab] = useState<'Top100' | 'Entry' | 'MyJob' | 'Regional'>('Top100');
+    const [activeTab, setActiveTab] = useState<'Top100' | 'Entry' | 'MyJob'>('Top100');
     const [userId, setUserId] = useState('');
     const [email, setEmail] = useState('');
 
     const navigate = useNavigate();
 
     const activeTabHandler: (tabIndex: 1 | 2 | 3 | 4) => void = (menu: 1 | 2 | 3 | 4) => {
-        let newTab: 'Top100' | 'Entry' | 'MyJob' | 'Regional';
+        let newTab: 'Top100' | 'Entry' | 'MyJob';
         if (menu === 1) {
             newTab = 'Top100';
         } else if (menu === 2) {
             newTab = 'Entry';
-        } else if (menu === 3) {
+        } else {
             if(userId===''){
                 toast.error('로그인 후 이용 가능합니다');
                 navigate('/signin');
                 return;
             }
             newTab = 'MyJob';
-        } else {
-            newTab = 'Regional';
         }
 
         if (activeTab !== newTab) {

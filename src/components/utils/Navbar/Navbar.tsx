@@ -9,8 +9,8 @@ import {toast} from "react-toastify";
 
 interface Props {
     userId: string;
-    activeTab: 'Top100' | 'Entry' | 'MyJob' | 'Regional';
-    activeTabHandler: (menu: 1 | 2 | 3 | 4) => void;
+    activeTab: 'Top100' | 'Entry' | 'MyJob';
+    activeTabHandler: (menu: 1 | 2 | 3) => void;
 }
 
 const Navbar: React.FC<Props> = ({ userId, activeTab, activeTabHandler }) => {
@@ -136,18 +136,6 @@ const Navbar: React.FC<Props> = ({ userId, activeTab, activeTabHandler }) => {
                            }}
                         >
                             나의 직무
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#"
-                           className={scrolled && activeTab === 'Regional' ? 'scrolled-active' : ''}
-                           onClick={(e) => {
-                               e.preventDefault();
-                               activeTabHandler(4);
-                               window.scrollTo({ top: 515, behavior: 'smooth' });
-                           }}
-                        >
-                            지역별
                         </a>
                     </li>
                 </ul>
