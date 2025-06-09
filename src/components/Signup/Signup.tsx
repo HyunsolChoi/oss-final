@@ -67,7 +67,7 @@ const Signup: React.FC<Props> = ({ email }) => {
     };
 
     const isValidSkill = (text: string): boolean => {
-        const regex = /^[a-zA-Z0-9가-힣().+]+$/;
+        const regex = /^[a-zA-Z0-9가-힣()]+$/;
         return regex.test(text);
     };
 
@@ -293,6 +293,7 @@ const Signup: React.FC<Props> = ({ email }) => {
                             onChange={(e) => setEducation(e.target.value)}
                         >
                             <option value="">학력 선택</option>
+                            <option value="미입력">미입력</option>
                             <option value="중졸">중학교 졸업</option>
                             <option value="고졸">고등학교 졸업</option>
                             <option value="전문학사">전문학사 (2~3년제)</option>
@@ -311,6 +312,7 @@ const Signup: React.FC<Props> = ({ email }) => {
                             onChange={(e) => setRegion(e.target.value)}
                         >
                             <option value="">지역 선택</option>
+                            <option value="noInput">미입력</option>
                             <option value="서울특별시">서울특별시</option>
                             <option value="부산광역시">부산광역시</option>
                             <option value="대구광역시">대구광역시</option>
@@ -418,25 +420,19 @@ const Signup: React.FC<Props> = ({ email }) => {
             {/*─────────── 3단계: 질문 생성 & 답변 입력 ───────────*/}
             {pageStep === 3 && !loadingQuestions && (
                 <>
-                    <div>
+                    <div className="gpt-input-wrapper">
                         <div className="input-description">
-                            <FontAwesomeIcon icon={faQuestionCircle} className="input-icon" />
                             아래 질문에 대해 답변해 주세요
                         </div>
 
                         {questions.map((question, idx) => (
-                            <div key={idx} style={{ marginBottom: '20px' }}>
-                                <label className="question-label" style={{
-                                    display: 'block',
-                                    marginBottom: '8px',
-                                    fontWeight: 'bold',
-                                    color: '#333'
-                                }}>
+                            <div key={idx} className="question-block">
+                                <label className="question-label">
                                     {idx + 1}. {question}
                                 </label>
-                                <div className="input-group">
-                                    <input
-                                        type="text"
+
+                                <div className="input-gpt-answer">
+                                    <textarea
                                         placeholder="답변을 입력하세요"
                                         value={answers[idx] || ''}
                                         onChange={(e) => {
@@ -444,24 +440,29 @@ const Signup: React.FC<Props> = ({ email }) => {
                                             newAnswers[idx] = e.target.value;
                                             setAnswers(newAnswers);
                                         }}
-                                        style={{ paddingLeft: '12px' }}
+                                        maxLength={200} //200자 제한
+                                        rows={3}
+                                        style={{ paddingLeft: '12px'}}
                                     />
+                                    <div className="char-count">
+                                        { (answers[idx] || '').length} / 200
+                                    </div>
                                 </div>
                             </div>
                         ))}
-
-                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
+                        <div
+                            className="button-wrapper"
+                        >
                             <button
                                 className="signup-button"
-                                style={{ flex: 1 }}
-                                onClick={() => setPageStep(2)} // 이전 단계로 전환
+                                onClick={() => setPageStep(2)}
                             >
                                 이전
                             </button>
                             <button
                                 className="signup-button"
-                                style={{flex: 3}}
-                                onClick={() => signupComplete()}
+                                style={{ flex: 3 }}
+                                onClick={signupComplete}
                             >
                                 가입 완료
                             </button>
