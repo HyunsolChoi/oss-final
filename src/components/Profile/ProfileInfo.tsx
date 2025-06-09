@@ -31,7 +31,7 @@ const ProfileInfo: React.FC<Props> = ({ userId }) => {
 
 
     // 상단: 학력/지역 옵션 정의
-    const educationOptions = ['미입력', '중졸', '고졸', '전문학사', '학사', '석사', '박사'];
+    const educationOptions = ['중졸', '고졸', '전문학사', '학사', '석사', '박사'];
     const regionOptions = [
         '서울특별시', '부산광역시', '대구광역시', '인천광역시', '광주광역시',
         '대전광역시', '울산광역시', '세종특별자치시', '경기도', '강원특별자치도',

@@ -1,28 +1,22 @@
 import { Job } from './jobs'
 
 // 컨설팅 정보 요청
-export async function getConsulting(userId: string, job: Job): Promise<{
+export async function getConsulting(userId: string, job: Job, isRetry = false): Promise<{
     success: boolean;
-    gptSummary?: string;
-    gptFit?: string;
-    gptGap?: string;
-    message?: string;
+    message: string;
 }> {
     try {
         const response = await fetch('/api/gpt/consulting', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId, job })
+            body: JSON.stringify({ userId, job, isRetry })
         });
 
         const result = await response.json();
 
         return {
             success: result.success,
-            gptSummary: result.summary,
-            gptFit: result.fit,
-            gptGap: result.gap,
-            message: result.message
+            message: result.answer
         };
     } catch (error) {
         console.error('컨설팅 요청 실패:', error);

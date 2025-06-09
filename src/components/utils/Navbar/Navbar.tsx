@@ -44,11 +44,8 @@ const Navbar: React.FC<Props> = ({ userId, activeTab, activeTabHandler }) => {
     };
 
     const onLogoClick = () => {
-        if (location.pathname === '/') {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        } else {
-            navigate('/');
-        }
+        navigate('/');
+        window.location.reload();
     };
 
     useEffect(() => {

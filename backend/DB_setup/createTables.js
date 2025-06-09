@@ -50,9 +50,9 @@ async function createTables() {
             // 7. 사용자 정보 테이블
             // sha256 hash값 저장을 위해 password는 CHAR(64)
             `CREATE TABLE IF NOT EXISTS users (
-                user_id CHAR(30) PRIMARY KEY,
+                user_id VARCHAR(30) PRIMARY KEY,
                 email VARCHAR(30) NOT NULL UNIQUE,
-                password CHAR(64) NOT NULL, 
+                password VARCHAR(64) NOT NULL, 
                 sector VARCHAR(30) NOT NULL
             );`,
 
@@ -64,7 +64,7 @@ async function createTables() {
 
             // 9. 사용자 - 스킬 매핑 테이블
             `CREATE TABLE user_skills (
-              user_id CHAR(30),
+              user_id VARCHAR(30),
               skill_id BIGINT,
               PRIMARY KEY (user_id, skill_id),
               FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
@@ -126,7 +126,7 @@ async function createTables() {
 
             // 15. 유저 토큰 테이블
             `CREATE TABLE user_tokens (
-              user_id CHAR(30) PRIMARY KEY,
+              user_id VARCHAR(30) PRIMARY KEY,
               refresh_token VARCHAR(512) NOT NULL UNIQUE,
               expires_at DATETIME NOT NULL,
               FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
@@ -135,7 +135,7 @@ async function createTables() {
             // 16. 로그인 이력 테이블
             `CREATE TABLE IF NOT EXISTS login_history (
                 id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                user_id CHAR(30) NOT NULL,
+                user_id VARCHAR(30) NOT NULL,
                 login_time DATETIME NOT NULL,
                 FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
             );`,
@@ -148,7 +148,7 @@ async function createTables() {
 
             // 18. 사용자 지역 매핑
             `CREATE TABLE IF NOT EXISTS user_location_mapping (
-                user_id CHAR(30),
+                user_id VARCHAR(30),
                 location_id INT,
                 PRIMARY KEY (user_id, location_id),
                 FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
@@ -163,7 +163,7 @@ async function createTables() {
 
             // 20. 사용자-학력 맵핑 테이블
             `CREATE TABLE IF NOT EXISTS user_educations_mapping (
-                user_id CHAR(30) NOT NULL,
+                user_id VARCHAR(30) NOT NULL,
                 user_education_id INT NOT NULL,
                 PRIMARY KEY (user_id, user_education_id),
                 FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
@@ -172,12 +172,10 @@ async function createTables() {
 
             // 21. GPT 컨설팅 관리 테이블
             `CREATE TABLE IF NOT EXISTS consultations (
-                consultation_id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                user_id CHAR(30) NOT NULL,
+                user_id VARCHAR(30) NOT NULL,
                 job_posting_id BIGINT NOT NULL,
-                requested_at DATETIME NOT NULL,
-                gpt_input JSON NOT NULL,
-                gpt_output JSON NOT NULL,
+                gpt_answer JSON NOT NULL,
+                PRIMARY KEY (user_id, job_posting_id),
                 FOREIGN KEY (user_id) REFERENCES users(user_id),
                 FOREIGN KEY (job_posting_id) REFERENCES job_postings(job_posting_id)
             );`,
@@ -192,7 +190,7 @@ async function createTables() {
             // 23. 유저 GPT Q&A 테이블
             `CREATE TABLE IF NOT EXISTS user_gpt (
                 user_gpt_id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                user_id CHAR(30) NOT NULL,
+                user_id VARCHAR(30) NOT NULL,
                 gpt_question TEXT NOT NULL,
                 user_answer TEXT NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -201,7 +199,7 @@ async function createTables() {
 
             // 24. 조회수 증가 시 새로고침으로 인한 조회수 증가 방지
             `CREATE TABLE IF NOT EXISTS manage_view (
-                user_id CHAR(30) NOT NULL,
+                user_id VARCHAR(30) NOT NULL,
                 job_posting_id BIGINT NOT NULL,
                 viewed_at DATETIME,
                 PRIMARY KEY (user_id, job_posting_id),
@@ -211,7 +209,7 @@ async function createTables() {
 
             // 25. 즐겨찾기 정보 저장 테이블
             `CREATE TABLE IF NOT EXISTS bookmarks (
-                user_id CHAR(30) NOT NULL,
+                user_id VARCHAR(30) NOT NULL,
                 job_posting_id BIGINT NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY (user_id, job_posting_id),

@@ -67,7 +67,7 @@ const Signup: React.FC<Props> = ({ email }) => {
     };
 
     const isValidSkill = (text: string): boolean => {
-        const regex = /^[a-zA-Z0-9가-힣()]+$/;
+        const regex = /^[a-zA-Z0-9가-힣().+]+$/;
         return regex.test(text);
     };
 
@@ -293,7 +293,6 @@ const Signup: React.FC<Props> = ({ email }) => {
                             onChange={(e) => setEducation(e.target.value)}
                         >
                             <option value="">학력 선택</option>
-                            <option value="미입력">미입력</option>
                             <option value="중졸">중학교 졸업</option>
                             <option value="고졸">고등학교 졸업</option>
                             <option value="전문학사">전문학사 (2~3년제)</option>
@@ -312,7 +311,6 @@ const Signup: React.FC<Props> = ({ email }) => {
                             onChange={(e) => setRegion(e.target.value)}
                         >
                             <option value="">지역 선택</option>
-                            <option value="noInput">미입력</option>
                             <option value="서울특별시">서울특별시</option>
                             <option value="부산광역시">부산광역시</option>
                             <option value="대구광역시">대구광역시</option>
@@ -466,7 +464,6 @@ const Signup: React.FC<Props> = ({ email }) => {
                                 onClick={() => signupComplete()}
                             >
                                 가입 완료
-                                <FontAwesomeIcon icon={faPaperPlane} style={{ marginLeft: '6px' }}/>
                             </button>
                         </div>
                     </div>

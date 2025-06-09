@@ -36,7 +36,7 @@ const Bookmark: React.FC<Props> = ({ checkToken }) => {
                 toast.error('즐겨찾기 정보를 불러오지 못했습니다');
             }
         })();
-    }, [checkToken]);
+    }, [checkToken, navigate]);
 
     const toggleCheck = (id: number) => {
         const updated = new Set(checkedIds);
