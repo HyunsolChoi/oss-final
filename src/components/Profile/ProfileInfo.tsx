@@ -169,36 +169,6 @@ const ProfileInfo: React.FC<Props> = ({ userId }) => {
 
         } catch (err: any) {
             toast.error(err.message || '질문 생성 중 오류 발생');
-            const gpt = await generateQuestions({
-                job: job,
-                skills: validSkills,
-                education: userData.education,
-                region: userData.region
-            });
-
-            if (gpt.success && gpt.questions) {
-                setQuestions(gpt.questions);
-                setAnswers(new Array(gpt.questions.length).fill(''));
-            } else {
-                toast.error(gpt.message || '질문 생성에 실패했습니다');
-            }
-
-            // 애니메이션 시작
-            setIsTransitioning(true);
-            setShowNewForm(true);
-
-            // 다음 프레임에서 애니메이션 트리거
-            requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                    setNewFormAnimating(true);
-                    setEditMode(false);
-                });
-            });
-
-            toast.success('정보가 저장되었습니다. 추가 질문에 답변해주세요!');
-
-        } catch (err: any) {
-            toast.error(err.message || '질문 생성 중 오류 발생');
         }
     };
 
@@ -230,7 +200,8 @@ const ProfileInfo: React.FC<Props> = ({ userId }) => {
                 return;
             }
 
-            result = await generateUserKeywords(userId); // 키워드 갱신
+            // 키워드 갱신
+            result = await generateUserKeywords(userId);
 
             if (!result.success) {
                 toast.error(result.message || '키워드 갱신 실패');
