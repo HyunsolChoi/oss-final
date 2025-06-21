@@ -51,14 +51,15 @@ export async function generateQuestions(data: {
     }
 }
 
+
 // 질문과 답변 저장
-export async function saveQuestionsAndAnswers(data: {
+export async function updateQuestionsAndAnswers(data: {
     userId: string;
     questions: string[];
     answers: string[];
 }): Promise<{ success: boolean; message?: string }> {
     try {
-        const response = await fetch('/api/gpt/save-qa', {
+        const response = await fetch('/api/gpt/update-qa', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
