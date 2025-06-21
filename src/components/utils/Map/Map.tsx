@@ -215,7 +215,7 @@ const Map: React.FC<Props> = ({ onRegionClick, selectedRegion }) => {
         return (
             <div className="korea-map-container">
                 <div className="loading-message">
-                    <div className="spinner"></div>
+                    <div className="spinner-map"></div>
                     지도 데이터를 불러오는 중...
                 </div>
             </div>

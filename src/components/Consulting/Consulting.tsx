@@ -15,7 +15,7 @@ interface Props {
 }
 
 const Consulting: React.FC<Props> = ({checkToken}) => {
-    const [gptFit, setGptFit] = useState<String>('');
+    const [gptAnswer, setGptAnswer] = useState<string>('');
     const [jobInfo, setJobInfo] = useState<Job | null>(null);
     const [loading, setLoading] = useState(true);
     const { jobId } = useParams<{ jobId: string }>();
@@ -34,24 +34,37 @@ const Consulting: React.FC<Props> = ({checkToken}) => {
         }
     };
 
-    // todo: 지피티 답변 정보 저장 기능 구현하기
     const handleRetry = async () => {
         if (!jobInfo || !uId) return;
 
         try {
             setLoading(true);
-            const res = await getConsulting(uId, jobInfo);
-            setLoading(false);
 
-            if (res.success && res.gptFit) {
-                setGptFit(res.gptFit);
+            const res = await getConsulting(uId, jobInfo, true);
+
+            if (res.success && res.message) {
+                try {
+                    // 문자열이면 후처리
+                    const cleaned =
+                        typeof res.message === 'string'
+                            ? res.message
+                                .replace(/,\s*}/g, '}')   // 마지막 객체 항목 쉼표 제거
+                                .replace(/,\s*]/g, ']')   // 마지막 배열 항목 쉼표 제거
+                            : res.message;
+
+                    setGptAnswer(cleaned);
+                } catch (err) {
+                    console.error('GPT 응답 후처리 오류:', err);
+                    toast.error('GPT 응답 처리 중 오류가 발생했습니다');
+                }
             } else {
-                toast.error(res.gptFit || '컨설팅 요청 실패');
+                toast.error(res.message || '컨설팅 갱신 실패');
             }
+            setLoading(false);
         } catch (err) {
             setLoading(false);
             console.error(err);
-            toast.error('컨설팅 요청 중 오류가 발생했습니다');
+            toast.error('컨설팅 갱신 중 오류가 발생했습니다');
         }
     };
 
@@ -89,24 +102,43 @@ const Consulting: React.FC<Props> = ({checkToken}) => {
                 // 조회수 증가
                 await increaseJobView(Number(jobId), validId);
 
-                // todo: 기존에 컨설팅 내역이 있다면 가져오고 return
-
                 setLoading(true);
+
                 const res = await getConsulting(validId, job);
+                if (res.success && res.message) {
+                    try {
+                        // 문자열이면 후처리
+                        const cleaned =
+                            typeof res.message === 'string'
+                                ? res.message
+                                    .replace(/,\s*}/g, '}')   // 마지막 객체 항목 쉼표 제거
+                                    .replace(/,\s*]/g, ']')   // 마지막 배열 항목 쉼표 제거
+                                : res.message;
+
+                        setGptAnswer(cleaned);
+                    } catch (err) {
+                        console.error('GPT 응답 후처리 오류:', err);
+                        toast.error('GPT 응답 처리 중 오류가 발생했습니다');
+                    }
+                } else {
+                    toast.error(res.message || '컨설팅 요청 실패');
+                }
                 setLoading(false);
 
-                if (res.success && res.gptFit) {
-                    setGptFit(res.gptFit);
-                } else {
-                    toast.error(res.gptFit || '컨설팅 요청 실패');
-                }
             } catch (err) {
+                setLoading(false);
                 console.error(err);
                 toast.error('공고 정보를 불러오거나 컨설팅 요청에 실패했습니다');
             }
         })();
 
-    }, [checkToken, jobId, navigate]);
+    }, [jobId]);
+
+    useEffect(() => {
+        if (!gptAnswer) return;
+
+        console.log('gptAnswer 업데이트됨:', gptAnswer); // 디버깅
+    }, [gptAnswer]);
 
     return (
         <div className="consulting-wrapper">
@@ -151,8 +183,40 @@ const Consulting: React.FC<Props> = ({checkToken}) => {
                         </div>
 
                         <h3 className="consulting-subtitle">GPT 컨설팅 결과</h3>
+
                         <pre className="consulting-answer">
-                            {loading ? 'GPT 컨설팅 정보를 받아오는 중입니다...' : (gptFit || '컨설팅 결과 없음')}
+                          {loading
+                              ? (
+                                  <span>
+                                    <span className="spinner"></span>GPT 컨설팅 정보를 받아오는 중입니다...
+                                  </span>
+                              )
+                              : (() => {
+                                  try {
+                                      const parsed = typeof gptAnswer === 'string'
+                                          ? JSON.parse(gptAnswer)
+                                          : gptAnswer;
+
+                                      let formatted = '';
+
+                                      if (parsed["적합성 평가"]) {
+                                          formatted += `적합성 평가:\n${parsed["적합성 평가"]}\n\n`;
+                                      }
+                                      if (parsed["강점 분석"]) {
+                                          formatted += `강점 분석:\n${parsed["강점 분석"]}\n\n`;
+                                      }
+                                      if (parsed["지원 전략 제안"]) {
+                                          formatted += `지원 전략 제안:\n${parsed["지원 전략 제안"]}\n\n`;
+                                      }
+                                      if (parsed["보완점 제안"]) {
+                                          formatted += `보완점 제안:\n${parsed["보완점 제안"]}\n`;
+                                      }
+
+                                      return formatted.trim();
+                                  } catch {
+                                      return '컨설팅 결과를 처리하는 중 오류가 발생했습니다.';
+                                  }
+                              })()}
                         </pre>
                         <div className="consulting-actions">
                             <button className="consulting-retry" onClick={handleRetry}>
@@ -162,7 +226,7 @@ const Consulting: React.FC<Props> = ({checkToken}) => {
                     </div>
                 )}
             </div>
-            <Footer />
+            <Footer/>
         </div>
     );
 };

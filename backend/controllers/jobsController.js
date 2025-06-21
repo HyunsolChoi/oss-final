@@ -4,7 +4,7 @@ const { buildRegionLikePatterns } = require('../Utils/regionFilter');
 /**
  * 랜덤 10개 공고, 임의
  */
-exports.getLatestJobs = async (req, res) => {
+exports.getRandomJobs = async (req, res) => {
     const query = `
       SELECT
         j.job_posting_id AS id,
@@ -355,6 +355,92 @@ exports.getJobsByRegion = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
+
+// 키워드에 맞는 공고 조회 (AI 추천 공고 기능)
+exports.getJobsByKeywords = async (req, res) => {
+    const { userId } = req.body;
+
+    if (!userId) {
+        return res.status(400).json({ error: 'userId가 필요합니다' });
+    }
+
+    try {
+        const [[user]] = await executeQuery(
+            `SELECT sector, keywords FROM users WHERE user_id = ?`,
+            [userId]
+        );
+
+        if (!user) {
+            return res.status(404).json({ error: '사용자 정보가 없습니다' });
+        }
+
+        const sector = user.sector;
+        let keywords = [];
+        try {
+            if (Array.isArray(user.keywords)) {
+                keywords = user.keywords;
+            } else {
+                keywords = JSON.parse(user.keywords || '[]');
+            }
+        } catch (e) {
+            console.error('[getJobsByKeywords JSON 파싱 오류]', e);
+            keywords = [];
+        }
+
+        const matchTerms = [sector, ...keywords];
+        const likeParams = matchTerms.flatMap(k => [`%${k}%`, `%${k}%`]);
+
+        const [matchedJobs] = await executeQuery(
+            `
+            SELECT
+                j.job_posting_id AS id,
+                j.title,
+                j.deadline,
+                c.company_name AS company
+            FROM job_postings j
+            JOIN job_posting_sectors jps ON j.job_posting_id = jps.job_posting_id
+            JOIN sectors s ON jps.sector_id = s.sector_id
+            JOIN companies c ON j.company_id = c.company_id
+            WHERE ${matchTerms.map(() => `(j.title LIKE ? OR s.sector_name LIKE ?)`).join(' OR ')}
+            GROUP BY j.job_posting_id
+            ORDER BY j.views DESC
+            LIMIT 10
+            `,
+            likeParams
+        );
+
+        let finalJobs = [...matchedJobs];
+
+        if (finalJobs.length < 10) {
+            const [topJobs] = await executeQuery(
+                `
+                SELECT
+                    j.job_posting_id AS id,
+                    j.title,
+                    j.deadline,
+                    c.company_name AS company
+                FROM job_postings j
+                LEFT JOIN companies c ON j.company_id = c.company_id
+                GROUP BY j.job_posting_id
+                ORDER BY j.views DESC
+                LIMIT ?
+                `,
+                [10 - finalJobs.length]
+            );
+
+            finalJobs = finalJobs.concat(
+                topJobs.filter(job => !finalJobs.some(j => j.id === job.id))
+            );
+        }
+
+        return res.json(finalJobs);
+    } catch (err) {
+        console.error('[getJobsByKeywords 오류]:', err);
+        return res.status(500).json({ error: '서버 오류' });
+    }
+};
+
+
 
 // 조회수 증가 - 3분 내에 중복 조회 시 증가 하지않도록 함
 exports.increaseView = async (req, res) => {

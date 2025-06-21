@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import './Profile.css';
 import {getUserProfile, updateUserProfile} from '../../api/user';
-import {generateQuestions, updateQuestionsAndAnswers} from '../../api/gpt';
+import {generateQuestions, updateQuestionsAndAnswers, generateUserKeywords} from '../../api/gpt';
 
 interface Props {
     userId: string;
@@ -39,8 +39,9 @@ const ProfileInfo: React.FC<Props> = ({ userId }) => {
         skills: [],
     });
 
+
     // 상단: 학력/지역 옵션 정의
-    const educationOptions = ['미입력', '중졸', '고졸', '전문학사', '학사', '석사', '박사'];
+    const educationOptions = ['중졸', '고졸', '전문학사', '학사', '석사', '박사'];
     const regionOptions = [
         '서울특별시', '부산광역시', '대구광역시', '인천광역시', '광주광역시',
         '대전광역시', '울산광역시', '세종특별자치시', '경기도', '강원특별자치도',
@@ -64,6 +65,7 @@ const ProfileInfo: React.FC<Props> = ({ userId }) => {
         const updatedSkills = userData.skills.filter((_, i) => i !== index);
         setUserData({ ...userData, skills: updatedSkills });
     };
+
 
     useEffect(() => {
         if (userId === '') return;
@@ -97,7 +99,7 @@ const ProfileInfo: React.FC<Props> = ({ userId }) => {
     };
 
     const isValidSkill = (text: string): boolean => {
-        const regex = /^[a-zA-Z0-9가-힣()]+$/;
+        const regex = /^[a-zA-Z0-9가-힣().+]+$/;
         return regex.test(text);
     };
 
@@ -163,6 +165,36 @@ const ProfileInfo: React.FC<Props> = ({ userId }) => {
                 });
             });
 
+            toast.success('추가 질문에 답변해주세요!');
+
+        } catch (err: any) {
+            toast.error(err.message || '질문 생성 중 오류 발생');
+            const gpt = await generateQuestions({
+                job: job,
+                skills: validSkills,
+                education: userData.education,
+                region: userData.region
+            });
+
+            if (gpt.success && gpt.questions) {
+                setQuestions(gpt.questions);
+                setAnswers(new Array(gpt.questions.length).fill(''));
+            } else {
+                toast.error(gpt.message || '질문 생성에 실패했습니다');
+            }
+
+            // 애니메이션 시작
+            setIsTransitioning(true);
+            setShowNewForm(true);
+
+            // 다음 프레임에서 애니메이션 트리거
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    setNewFormAnimating(true);
+                    setEditMode(false);
+                });
+            });
+
             toast.success('정보가 저장되었습니다. 추가 질문에 답변해주세요!');
 
         } catch (err: any) {
@@ -190,11 +222,18 @@ const ProfileInfo: React.FC<Props> = ({ userId }) => {
             const job = userData.job.trim();
             const validSkills = userData.skills.map((sk) => sk.trim()).filter((sk) => sk !== '');
 
-            // 질문들 DB 저장
+            // gpt질문들 DB 저장
             let result = await updateQuestionsAndAnswers({userId, questions, answers});
 
             if (!result.success) {
-                toast.error(result.message || '정보 저장 실패');
+                toast.error(result.message || '질문 저장 실패');
+                return;
+            }
+
+            result = await generateUserKeywords(userId); // 키워드 갱신
+
+            if (!result.success) {
+                toast.error(result.message || '키워드 갱신 실패');
                 return;
             }
 
@@ -407,7 +446,7 @@ const ProfileInfo: React.FC<Props> = ({ userId }) => {
                         )}
                     </div>
                 </form>
-                
+
                 {showNewForm && renderNewInfoForm()}
             </div>
         </div>

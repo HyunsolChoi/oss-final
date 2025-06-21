@@ -47,7 +47,6 @@ async function validateEmailCode(email, code) {
 
 // 인증 코드 요청
 exports.requestVerificationCode = async (req, res) => {
-    console.log(transporter);
     const { email } = req.body;
     if (!email) return res.status(400).json({ message: '이메일이 필요합니다' });
 
