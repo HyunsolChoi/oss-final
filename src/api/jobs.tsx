@@ -19,8 +19,8 @@ async function request<T>(path: string): Promise<T> {
     return await res.json() as Promise<T>
 }
 
-export function getLatestJobs(): Promise<Job[]> {
-    return request<Job[]>('/api/jobs/latest')
+export function getRandomJobs(): Promise<Job[]> {
+    return request<Job[]>('/api/jobs/random')
 }
 
 export function getTop100Jobs(): Promise<Job[]> {
@@ -89,13 +89,29 @@ export async function increaseJobView(jobId: number, userId: string): Promise<vo
 }
 
 // 지역별 채용공고 조회
-export async function getJobsByRegion(region: string): Promise<Job[]> {
-    const res = await fetch('/api/jobs/region', {
+// export async function getJobsByRegion(region: string): Promise<Job[]> {
+//     const res = await fetch('/api/jobs/region', {
+//         method: 'POST',
+//         headers: {'Content-Type': 'application/json'},
+//         body: JSON.stringify({region}),
+//     })
+//     if (!res.ok)
+//         throw new Error('지역별 공고 조회에 실패했습니다')
+//     return (await res.json() as Promise<Job[]>)
+// }
+
+// 사용자 맞춤 추천 공고 요청 (AI 추천 공고)
+export async function getRecommendedJobs(userId: string): Promise<Job[]> {
+    const res = await fetch('/api/jobs/job-recommend', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({region}),
-    })
-    if (!res.ok)
-        throw new Error('지역별 공고 조회에 실패했습니다')
-    return (await res.json() as Promise<Job[]>)
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+    });
+
+    if (!res.ok) {
+        throw new Error('추천 공고 조회에 실패했습니다');
+    }
+
+    return await res.json() as Promise<Job[]>;
 }
+

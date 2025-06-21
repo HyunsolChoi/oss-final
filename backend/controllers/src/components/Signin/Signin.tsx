@@ -1,0 +1,148 @@
+// src/components/Signin.tsx
+import React, {useEffect, useState} from 'react'
+import './Signin.css'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faUser, faLock } from '@fortawesome/free-solid-svg-icons';
+import {toast} from "react-toastify";
+import {useNavigate} from "react-router-dom";
+import { signin } from '../../api/auth'
+import Footer from "../utils/Footer/Footer";
+
+interface Props {
+    setUserId: (id: string) => void;
+    checkToken: () =>  string | undefined;
+}
+
+const Signin: React.FC<Props> = ({ setUserId, checkToken }) => {
+    const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [inputId, setInputId] = useState('');
+    const [saveId, setSaveId] = useState(false);
+
+    const navigate = useNavigate();
+
+    const isValidUserId = (id: string): boolean => {
+        const regex = /^[a-zA-Z0-9]{6,20}$/;
+        return regex.test(id);
+    };
+
+    const isValidPwd = (pwd: string): boolean => {
+        const regex = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@])[a-zA-Z\d!@]{8,15}$/;
+        return regex.test(pwd);
+    };
+
+
+    const signHandler = async () => {
+        if (!inputId || !password) {
+            toast.error('아이디와 비밀번호를 입력해주세요');
+            return;
+        }
+
+        if(!isValidUserId(inputId) || !isValidPwd(password)) {
+            toast.error('유효하지 않은 아이디와 비밀번호 입니다');
+            return;
+        }
+
+        signin(inputId, password)
+            .then(result => {
+                if (result && 'token' in result) {
+                    localStorage.setItem('token-careerfit', result.token);
+
+                    setUserId(inputId);
+
+                    if (saveId) {
+                        localStorage.setItem('careerfit-id', inputId);
+                    } else {
+                        localStorage.removeItem('careerfit-id');
+                    }
+
+                    navigate('/');
+                } else if (result && 'message' in result) {
+                    toast.error(result.message);
+                } else {
+                    toast.error('로그인 실패');
+                }
+            })
+            .catch(() => {
+                toast.error('로그인 중 문제가 발생했습니다');
+            });
+    };
+
+    useEffect(() => {
+        const savedId = localStorage.getItem('careerfit-id');
+        if (savedId) {
+            setUserId(savedId);
+            setSaveId(true);
+        }
+    }, [setUserId]);
+
+    useEffect(() => {
+        const validToken = checkToken();
+
+        if(validToken){ // 로그인 되어있으면 로그인 페이지 접근불가 하도록
+            navigate('/');
+            return;
+        }
+    }, [checkToken, navigate]);
+
+    return (
+        <div className="wrapper-footer">
+            <div className="login-wrapper">
+                <h2>로그인</h2>
+                <form
+                    onSubmit={async (e) => {
+                        e.preventDefault(); // 기본 폼 제출 방지
+                        await signHandler(); // 로그인 실행
+                    }}
+                >
+                    <div className="input-group">
+                        <FontAwesomeIcon icon={faUser} className="input-icon" />
+                        <input
+                            type="text"
+                            placeholder="아이디"
+                            value={inputId}
+                            onChange={(e) => setInputId(e.target.value)}
+                        />
+                    </div>
+
+                    <div className="input-group">
+                        <FontAwesomeIcon icon={faLock} className="input-icon" />
+                        <input
+                            type={showPassword ? 'text' : 'password'}
+                            placeholder="비밀번호"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                        />
+                        <span className="show-toggle" onClick={() => setShowPassword(!showPassword)}>
+                          비밀번호 표시
+                        </span>
+                    </div>
+
+                    <div className="options">
+                        <label>
+                            <input
+                                type="checkbox"
+                                checked={saveId}
+                                onChange={(e) => setSaveId(e.target.checked)}
+                            />{' '}
+                            아이디 저장
+                        </label>
+                    </div>
+
+                    <button type="submit" className="login-button">로그인</button>
+
+                    <div className="link-row">
+                        <a href="/find_idpw?tab=1">아이디 찾기</a>
+                        <span>|</span>
+                        <a href="/find_idpw?tab=2">비밀번호 재설정</a>
+                        <span>|</span>
+                        <a href="/agreement">회원가입</a>
+                    </div>
+                </form>
+            </div>
+            <Footer/>
+        </div>
+    );
+}
+
+export default Signin
