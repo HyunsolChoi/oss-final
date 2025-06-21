@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import './Profile.css';
 import {getUserProfile, updateUserProfile} from '../../api/user';
+import {generateUserKeywords} from "../../api/gpt";
 
 interface Props {
     userId: string;
@@ -89,7 +90,7 @@ const ProfileInfo: React.FC<Props> = ({ userId }) => {
     };
 
     const isValidSkill = (text: string): boolean => {
-        const regex = /^[a-zA-Z0-9가-힣()]+$/;
+        const regex = /^[a-zA-Z0-9가-힣().+]+$/;
         return regex.test(text);
     };
 
@@ -144,6 +145,9 @@ const ProfileInfo: React.FC<Props> = ({ userId }) => {
             }
 
             setEditMode(false);
+
+            await generateUserKeywords(userId); // 키워드 갱신
+
             toast.success('정보가 저장되었습니다');
         } catch (err: any) {
             toast.error(err.message || '정보 저장 중 오류 발생');

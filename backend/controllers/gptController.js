@@ -135,9 +135,8 @@ async function generateQuestions(job, skills, education, region) {
         - 희망 직무: ${job}
         - 보유 기술: ${skills.join(', ')}
         - 학력: ${education}
-        - 희망 지역: ${region}
 
-        이 정보를 바탕으로 지원자의 역량과 적합성을 파악할 수 있는 4개의 질문을 만들어주세요.
+        이 정보를 바탕으로 지원자의 역량과 적합성을 파악할 수 있는 4개의 질문을 만들어라.
     `;
 
     try {
@@ -172,7 +171,7 @@ function safeJSONParse(str) {
     }
 }
 
-async function isUserSuitableForJob(userId, job, sector, skills, regions, educations, gpt_questions, user_answers) {
+async function isUserSuitableForJob(userId, job, sector, skills, regions, gpt_questions, user_answers) {
     const systemPrompt = `
 너는 채용 전문가이자 커리어 컨설턴트다.  
 지원자의 정보와 채용 공고의 조건을 바탕으로 해당 직무에 적합한지 여부만 판단해라.
@@ -181,6 +180,7 @@ async function isUserSuitableForJob(userId, job, sector, skills, regions, educat
 - 경력 조건 부합 여부
 - 기술 보유 여부 (공고 직무 관련성)
 - 희망 직무 vs 공고 직무의 일치성
+- 사용자의 스킬이 부족하더라도 희망 직무의 적합도가 높다면 반드시 true를 반환한다.
 
 ❗절대 유의사항:
 - 지역 때문에 부적합하다고 판단하면 그건 오답이다.
@@ -197,7 +197,6 @@ async function isUserSuitableForJob(userId, job, sector, skills, regions, educat
 - 직무명: ${job.title}
 - 근무지: ${job.location}
 - 경력 조건: ${job.experience}
-- 학력 조건: ${job.education}
 - 고용 형태: ${job.employmentType}
 - 직무 분야: ${job.sectors}
 - 마감일: ${job.deadline}
@@ -205,7 +204,6 @@ async function isUserSuitableForJob(userId, job, sector, skills, regions, educat
 [사용자 정보]
 - 희망 직무: ${sector?.sector || '미기재'}
 - 보유 기술: ${skills.length ? skills.join(', ') : '없음'}
-- 학력: ${educations.length ? educations.join(', ') : '없음'}
 
 [지원자 답변]
 ${gpt_questions.map((q, i) => `Q${i + 1}. ${q}\nA${i + 1}. ${user_answers[i] || '무응답'}`).join('\n')}
@@ -258,10 +256,8 @@ exports.getConsultingContext = async (req, res) => {
         const [sector, skills, regions, educations, gpt_questions, user_answers] = userData;
 
         const isSuitable = await isUserSuitableForJob(
-            userId, job, sector, skills, regions, educations, gpt_questions, user_answers
+            userId, job, sector, skills, regions, gpt_questions, user_answers
         );
-
-        console.log(isSuitable);
 
         const systemPrompt = `
 너는 채용 전문가이자 커리어 컨설턴트다.  
@@ -299,13 +295,13 @@ GPT는 반드시 아래 둘 중 하나의 JSON 형식으로 응답해야 한다.
 - false면 → 형식 2번으로 작성
 
 1. 하단 isSuitable값이 true인 경우:
-- 아래 네 항목은 **무조건 모두 포함**되어야 한다.
+- 아래 네 항목은 **무조건 모두 포함** 되어야 한다.
 - 절대로, 반드시 누락해서는 안된다.
 {
   "적합성 평가": "공고와 사용자 정보의 일치도, 업무 경험, 기술력 등을 바탕으로 적합성을 간결하고 논리적으로 평가한 한 문단.",
   "강점 분석": "해당 공고에 지원자가 적합한 구체적인 이유. 보유 기술, 경력, 직무 이해도, 지역 선호 등 포함.",
   "지원 전략 제안": "실질적인 면접 또는 서류 준비 팁 1~2가지. 강점을 기반으로 한 전략 위주로 작성.",
-  "보완점 제안": "공고 대비 부족한 부분이 있다면 현실적인 개선 방향 제시. 단, 근거 없는 추정은 하지 말 것."
+  "보완점 제안": "공고 대비 부족한 부분에 대해 현실적인 개선 방향 제시. 단, 근거 없는 추정은 하지 말 것."
 }
 
 2. 하단 isSuitable값이 false인 경우:
@@ -391,6 +387,83 @@ exports.generateGPTQuestions = async (req, res) => {
     }
 };
 
+// 키워드 생성 및 저장
+exports.processUserKeywords = async (req, res) => {
+    const { userId } = req.body;
+
+    if (!userId) {
+        return res.status(400).json({ success: false, message: 'userId가 필요합니다' });
+    }
+
+    try {
+        // 기본 유저 정보
+        const userData = await getUserInfo(userId);
+
+        if (!userData) {
+            return res.status(404).json({ success: false, message: '사용자 정보를 찾을 수 없습니다' });
+        }
+
+        const [sector, skills] = userData;
+
+        // 즐겨찾기 공고의 직무 정보 수집
+        const [rows] = await executeQuery(
+            `
+            SELECT DISTINCT s.sector_name
+            FROM bookmarks b
+            JOIN job_posting_sectors jps ON b.job_posting_id = jps.job_posting_id
+            JOIN sectors s ON jps.sector_id = s.sector_id
+            WHERE b.user_id = ?
+            `,
+            [userId]
+        );
+        const bookmarkedSectors = rows.map(r => r.sector_name);
+
+        // GPT 프롬프트 구성
+        const systemPrompt = `
+        너는 커리어 분석 전문가이다.  
+        지원자의 직무와 기술 스택, 즐겨찾은 채용공고 직무를 기반으로 직무 관련 키워드 5개를 선정해라.
+        
+        [조건]
+        - 모든 키워드는 공백 없이 하나의 단어로 구성되어야 함 (예: "백엔드", "Java", "DB", "회계", "인사" 등)
+        - 반드시 직무 또는 기술과 관련 있는 핵심 키워드여야 함
+        - 키워드는 추상적이지 않고 구체적이어야 함 (예: "개발", "기술" 금지)
+        - 아래 JSON 형식으로만 응답하라. 다른 설명, 주석 포함 금지.
+        
+        [응답 형식]
+        {
+          "keywords": ["키워드1", "키워드2", "키워드3", "키워드4", "키워드5"]
+        }
+        `.trim();
+
+        const userPrompt = `
+        지원자 정보:
+        - 희망 직무: ${sector?.sector || '미기재'}
+        - 보유 기술: ${skills.length ? skills.join(', ') : '없음'}
+        - 즐겨찾은 직무 분야: ${bookmarkedSectors.length ? bookmarkedSectors.join(', ') : '없음'}
+        `.trim();
+
+        const raw = await callGPT(systemPrompt, userPrompt);
+        const parsed = safeJSONParse(raw);
+
+        if (!parsed || !Array.isArray(parsed.keywords) || parsed.keywords.length !== 5) {
+            return res.status(500).json({ success: false, message: '키워드 생성 실패' });
+        }
+
+        const keywords = parsed.keywords;
+
+        await executeQuery(
+            `UPDATE users SET keywords = ? WHERE user_id = ?`,
+            [JSON.stringify(keywords), userId]
+        );
+
+        return res.json({ success: true, keywords });
+    } catch (err) {
+        console.error('[ERROR] processUserKeywords:', err);
+        return res.status(500).json({ success: false, message: '서버 오류' });
+    }
+};
+
+
 // 질문과 답변 저장 API => 혹시라도 질문 더 많다는 기능 추가로 활용 가능
 exports.saveQuestionsAndAnswers = async (req, res) => {
     const { userId, questions, answers } = req.body;
@@ -432,3 +505,4 @@ exports.saveQuestionsAndAnswers = async (req, res) => {
         });
     }
 };
+

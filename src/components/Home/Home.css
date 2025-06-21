@@ -136,6 +136,8 @@
 }
 
 .rect-card {
+    width: 800px;
+    max-width: 100%;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -156,14 +158,20 @@
 .rect-card .info {
     flex: 1;
     display: flex;
+    max-width: 90%;
     flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
 }
 
 .rect-card .title {
+    display: block;
     font-weight: bold;
-    overflow: hidden;
     white-space: nowrap;
+    overflow: hidden;
     text-overflow: ellipsis;
+    min-width: 0;
+    max-width: 100%;
 }
 
 .rect-card .meta {

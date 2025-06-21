@@ -1,6 +1,6 @@
 import React, {useState, useEffect, useCallback} from 'react';
 import './Home.css';
-import { Job, getLatestJobs, getTop100Jobs, getEntryLevelJobs, getMyJobs } from '../../api/jobs'
+import { Job, getRandomJobs, getTop100Jobs, getEntryLevelJobs, getMyJobs, getRecommendedJobs } from '../../api/jobs'
 import {useNavigate} from "react-router-dom";
 import Footer from "../utils/Footer/Footer";
 import {toast} from "react-toastify";
@@ -14,7 +14,7 @@ interface Props {
 }
 
 const Home: React.FC<Props> = ({ userId, activeTab, activeTabHandler }) => {
-    const [recommendJobs, setLatestJobs] = useState<Job[]>([]);
+    const [recommendJobs, setRecommendJobs] = useState<Job[]>([]);
     const [topJobs,  setTopJobs]    = useState<Job[]>([]);
     const [entryJobs,  setEntryJobs]  = useState<Job[]>([]);
     const [myJobs, setMyJobs] = useState<Job[]>([]);
@@ -137,18 +137,27 @@ const Home: React.FC<Props> = ({ userId, activeTab, activeTabHandler }) => {
     }, [activeTab, handleRegionClick, selectedRegion]);
 
     useEffect(() => {
-        getLatestJobs()
-            .then(setLatestJobs)
-            .catch(console.error)
+        if (userId === '') {
+            // 비로그인: 랜덤 공고
+            getRandomJobs()
+                .then(setRecommendJobs)
+                .catch(console.error);
+        } else {
+            // 로그인: AI 추천 공고
+            getRecommendedJobs(userId)
+                .then(setRecommendJobs)
+                .catch(console.error);
+        }
 
         getTop100Jobs()
             .then(setTopJobs)
-            .catch(console.error)
+            .catch(console.error);
 
         getEntryLevelJobs()
             .then(setEntryJobs)
-            .catch(console.error)
-    }, [])
+            .catch(console.error);
+
+    }, [userId]);
 
     // 스크롤 최하위로 하면 공고 추가 렌더링을 위한,,,
     useEffect(() => {

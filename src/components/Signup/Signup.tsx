@@ -1,10 +1,10 @@
 import React, {useEffect, useState} from 'react';
 import './Signup.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUser, faLock, faBriefcase, faLightbulb, faPaperPlane, faQuestionCircle  } from '@fortawesome/free-solid-svg-icons';
+import { faUser, faLock, faBriefcase, faLightbulb, faQuestionCircle  } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'react-toastify';
 import { checkDuplicateId, signup } from '../../api/auth';
-import { generateQuestions } from '../../api/gpt';
+import {generateQuestions, generateUserKeywords} from '../../api/gpt';
 import {useNavigate} from "react-router-dom";
 
 interface Props {
@@ -12,26 +12,28 @@ interface Props {
 }
 
 const Signup: React.FC<Props> = ({ email }) => {
-    // 1. 페이지 단계 관리 (1~3단계)
+    // 페이지 단계 관리
     const [pageStep, setPageStep] = useState<number>(1);
 
-    // 2. 1단계 상태 (아이디/비밀번호)
+    // (아이디/비밀번호)
     const [userId, setUserId] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [confirmPassword, setConfirmPassword] = useState('');
 
-    // 3. 2단계 상태 (학력/지역/직무/기술)
+    // (학력/지역/직무/기술)
     const [education, setEducation] = useState('');
     const [region, setRegion] = useState('');
     const [job, setJob] = useState('');
     const [skills, setSkills] = useState<string[]>(['']);
     const [trimmedSkills, setTrimmedSkills] = useState<string[]>([]);
 
-    // 4. 3단계 상태 (질문 4개 + 각 질문별 답변)
+    // (질문 4개 + 각 질문별 답변)
     const [questions, setQuestions] = useState<string[]>([]);
     const [answers, setAnswers] = useState<string[]>(['', '', '', '']);
     const [loadingQuestions, setLoadingQuestions] = useState(false);
+
+    const [isSigningUp, setIsSigningUp] = useState(false); // 회원가입 중복 호출 방지
 
     const navigate = useNavigate();
 
@@ -67,7 +69,7 @@ const Signup: React.FC<Props> = ({ email }) => {
     };
 
     const isValidSkill = (text: string): boolean => {
-        const regex = /^[a-zA-Z0-9가-힣()]+$/;
+        const regex = /^[a-zA-Z0-9가-힣().+]+$/;
         return regex.test(text);
     };
 
@@ -78,10 +80,14 @@ const Signup: React.FC<Props> = ({ email }) => {
     };
 
     const signupComplete = async () => {
+        if (isSigningUp) return;
+        setIsSigningUp(true);
+
         // 모든 답변이 입력되었는지 확인
         const filledAnswers = answers.filter(a => a.trim() !== '');
         if (filledAnswers.length !== questions.length) {
             toast.error('모든 질문에 답변해주세요');
+            setIsSigningUp(false);
             return;
         }
 
@@ -99,6 +105,12 @@ const Signup: React.FC<Props> = ({ email }) => {
             });
 
             if (result.success) {
+                const keywordResult = await generateUserKeywords(userId);
+
+                if (!keywordResult.success) {
+                    console.warn('키워드 생성 실패 & 재실행:', keywordResult.message);
+                    await generateUserKeywords(userId);
+                }
                 toast.success("회원가입 성공!");
                 navigate("/signin");
             } else {
@@ -106,6 +118,8 @@ const Signup: React.FC<Props> = ({ email }) => {
             }
         } catch (err: any) {
             toast.error(err.message || "회원가입 중 오류 발생");
+        } finally {
+            setIsSigningUp(false);
         }
     };
 
@@ -463,6 +477,7 @@ const Signup: React.FC<Props> = ({ email }) => {
                                 className="signup-button"
                                 style={{ flex: 3 }}
                                 onClick={signupComplete}
+                                disabled={isSigningUp}
                             >
                                 가입 완료
                             </button>

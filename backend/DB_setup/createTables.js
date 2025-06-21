@@ -48,12 +48,13 @@ async function createTables() {
             );`,
 
             // 7. 사용자 정보 테이블
-            // sha256 hash값 저장을 위해 password는 CHAR(64)
+            // sha256 hash값 저장을 위해 password는 VARCHAR(64)
             `CREATE TABLE IF NOT EXISTS users (
                 user_id VARCHAR(30) PRIMARY KEY,
                 email VARCHAR(30) NOT NULL UNIQUE,
                 password VARCHAR(64) NOT NULL, 
-                sector VARCHAR(30) NOT NULL
+                sector VARCHAR(30) NOT NULL,
+                keywords JSON
             );`,
 
             // 8. 스킬 테이블
@@ -176,8 +177,8 @@ async function createTables() {
                 job_posting_id BIGINT NOT NULL,
                 gpt_answer JSON NOT NULL,
                 PRIMARY KEY (user_id, job_posting_id),
-                FOREIGN KEY (user_id) REFERENCES users(user_id),
-                FOREIGN KEY (job_posting_id) REFERENCES job_postings(job_posting_id)
+                FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+                FOREIGN KEY (job_posting_id) REFERENCES job_postings(job_posting_id) ON DELETE CASCADE
             );`,
 
             // 22. 이메일 인증 키 관리 테이블

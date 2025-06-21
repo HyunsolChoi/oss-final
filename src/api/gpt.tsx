@@ -75,3 +75,26 @@ export async function saveQuestionsAndAnswers(data: {
         return { success: false, message: '서버와의 통신 중 오류 발생' };
     }
 }
+
+export async function generateUserKeywords(userId: string): Promise<{
+    success: boolean;
+    message?: string;
+}> {
+    try {
+        const response = await fetch('/api/gpt/keywords', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId })
+        });
+
+        const result = await response.json();
+
+        return {
+            success: result.success,
+            message: result.message
+        };
+    } catch (error) {
+        console.error('키워드 생성 요청 실패:', error);
+        return { success: false, message: '서버와의 통신 중 오류 발생' };
+    }
+}
