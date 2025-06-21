@@ -1,5 +1,8 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
+const moment = require('moment');
+require('moment/locale/ko');
+moment.locale('ko');
 
 /**
  * 사람인 채용정보 크롤링 함수
@@ -51,7 +54,21 @@ async function crawlSaramin(pages = 1) {
                     const employmentType = conditions.eq(3).text().trim() || '';
                     const salary = conditions.eq(4).text().trim() || '추후 협의';
 
-                    const deadline = $(element).find('.job_date .date').text().trim() || '';
+                    const deadlineRaw = $(element).find('.job_date .date').text().trim() || '';
+
+                    // 진행 예정 제외
+                    if (deadlineRaw.includes('진행예정')) return;
+
+                    // 오늘마감, 내일마감 처리
+                    let deadline = deadlineRaw;
+                    if (deadlineRaw.includes('오늘')) {
+                        deadline = moment().format('MM/DD(ddd)'); // ex: 06/21(금)
+                    } else if (deadlineRaw.includes('내일')) {
+                        deadline = moment().add(1, 'days').format('MM/DD(ddd)'); // ex: 06/22(토)
+                    }
+
+                    deadline = deadline.replace(/^~\s*/, '').trim();
+
                     let sector = $(element).find('.job_sector').text().trim() || '';
 
                     // sector 처리: " 외" 제거 및 중복 제거

@@ -465,7 +465,7 @@ exports.processUserKeywords = async (req, res) => {
 
 
 // 질문과 답변 저장 API => 혹시라도 질문 더 많다는 기능 추가로 활용 가능
-exports.saveQuestionsAndAnswers = async (req, res) => {
+exports.updateQuestionsAndAnswers = async (req, res) => {
     const { userId, questions, answers } = req.body;
 
     if (!userId || !questions || !answers || questions.length !== answers.length) {
@@ -482,7 +482,7 @@ exports.saveQuestionsAndAnswers = async (req, res) => {
             // 질문 저장
             if(questions[i].trim() && answers[i].trim()){
                 queries.push({
-                    query: `INSERT INTO user_gpt (user_id, gpt_question, user_answers) VALUES (?, ?, ?)`,
+                    query: `INSERT INTO user_gpt (user_id, gpt_question, user_answer) VALUES (?, ?, ?)`,
                     params: [userId, questions[i].trim(), answers[i].trim()]
                 });
             }
