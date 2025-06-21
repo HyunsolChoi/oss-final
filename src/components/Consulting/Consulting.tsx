@@ -21,6 +21,7 @@ const Consulting: React.FC<Props> = ({checkToken}) => {
     const { jobId } = useParams<{ jobId: string }>();
     const [uId, setUId] = useState('');
     const [starred, setStarred] = useState(false);
+    const [isConsultingRetry, setIsConsultingRetry] = useState(false);
 
     const navigate = useNavigate();
 
@@ -39,6 +40,7 @@ const Consulting: React.FC<Props> = ({checkToken}) => {
 
         try {
             setLoading(true);
+            setIsConsultingRetry(true);
 
             const res = await getConsulting(uId, jobInfo, true);
 
@@ -60,11 +62,12 @@ const Consulting: React.FC<Props> = ({checkToken}) => {
             } else {
                 toast.error(res.message || '컨설팅 갱신 실패');
             }
-            setLoading(false);
         } catch (err) {
-            setLoading(false);
             console.error(err);
             toast.error('컨설팅 갱신 중 오류가 발생했습니다');
+        } finally {
+            setLoading(false);
+            setIsConsultingRetry(false);
         }
     };
 
@@ -219,7 +222,12 @@ const Consulting: React.FC<Props> = ({checkToken}) => {
                               })()}
                         </pre>
                         <div className="consulting-actions">
-                            <button className="consulting-retry" onClick={handleRetry}>
+                            <button
+                                type = "button"
+                                className={`consulting-retry ${isConsultingRetry ? ' loading' : ''}`}
+                                onClick={handleRetry}
+                                disabled={isConsultingRetry}
+                            >
                                 컨설팅 갱신
                             </button>
                         </div>
