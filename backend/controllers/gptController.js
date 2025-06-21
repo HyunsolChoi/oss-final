@@ -227,6 +227,18 @@ exports.getConsultingContext = async (req, res) => {
     }
 
     try {
+        // 갱신 요청인 경우 횟수 체크
+        if (isRetry) {
+            const canRetry = await checkRetryAvailable(userId, job.id);
+            if (!canRetry) {
+                return res.status(403).json({
+                    success: false,
+                    message: '하루에 한 번만 갱신할 수 있습니다. 내일 다시 시도해주세요.',
+                    retryAvailable: false
+                });
+            }
+        }
+
         // 갱신 요청이 아닌 경우에만 기존 컨설팅 여부 확인
         if(!isRetry){
             const [rows] = await executeQuery(
@@ -240,7 +252,9 @@ exports.getConsultingContext = async (req, res) => {
                 const answer = typeof raw === 'object' ? raw : safeJSONParse(raw);
 
                 if (answer) {
-                    return res.json({ success: true, answer });
+                    // 갱신 가능 여부도 함께 반환
+                    const canRetry = await checkRetryAvailable(userId, job.id);
+                    return res.json({ success: true, answer, retryAvailable: canRetry });
                 }
             }
         }
@@ -339,13 +353,19 @@ ${gpt_questions.map((q, i) => `Q${i + 1}. ${q}\nA${i + 1}. ${user_answers[i] || 
 
         const rawAnswer = await callGPT(systemPrompt, userPrompt);
 
-
         await executeQuery(
             `REPLACE INTO consultations (user_id, job_posting_id, gpt_answer) VALUES (?, ?, ?)`,
             [userId, job.id, JSON.stringify(rawAnswer)]
         );
 
-        return res.json({ success: true, answer: rawAnswer });
+        // 갱신인 경우 기록
+        if (isRetry) {
+            await recordRetry(userId, job.id);
+        }
+
+        // 갱신 가능 여부도 함께 반환
+        const canRetryAfter = await checkRetryAvailable(userId, job.id);
+        return res.json({ success: true, answer: rawAnswer, retryAvailable: canRetryAfter });
 
     } catch (err) {
         console.error('[ERROR] getConsultingContext:', err);
@@ -513,3 +533,41 @@ exports.updateQuestionsAndAnswers = async (req, res) => {
         return res.status(500).json({ success: false, message: '갱신 중 오류' });
     }
 };
+
+// 컨설팅 갱신 가능 여부 체크 함수
+async function checkRetryAvailable(userId, jobId) {
+    try {
+        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD 형식
+
+        const [rows] = await executeQuery(
+            `SELECT retry_count FROM consultation_retries
+             WHERE user_id = ? AND job_posting_id = ? AND retry_date = ?`,
+            [userId, jobId, today]
+        );
+
+        // 오늘 갱신한 기록이 없으면 가능
+        if (rows.length === 0) return true;
+
+        // 이미 1번 갱신했으면 불가능
+        return rows[0].retry_count < 1;
+    } catch (err) {
+        console.error('[checkRetryAvailable 오류]', err);
+        return false;
+    }
+}
+
+// 갱신 횟수 기록 함수
+async function recordRetry(userId, jobId) {
+    try {
+        const today = new Date().toISOString().split('T')[0];
+
+        await executeQuery(
+            `INSERT INTO consultation_retries (user_id, job_posting_id, retry_date, retry_count)
+             VALUES (?, ?, ?, 1)
+             ON DUPLICATE KEY UPDATE retry_count = retry_count + 1`,
+            [userId, jobId, today]
+        );
+    } catch (err) {
+        console.error('[recordRetry 오류]', err);
+    }
+}
