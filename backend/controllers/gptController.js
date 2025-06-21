@@ -353,7 +353,6 @@ ${gpt_questions.map((q, i) => `Q${i + 1}. ${q}\nA${i + 1}. ${user_answers[i] || 
 
         const rawAnswer = await callGPT(systemPrompt, userPrompt);
 
-
         await executeQuery(
             `REPLACE INTO consultations (user_id, job_posting_id, gpt_answer) VALUES (?, ?, ?)`,
             [userId, job.id, JSON.stringify(rawAnswer)]
