@@ -111,12 +111,9 @@ const Consulting: React.FC<Props> = ({checkToken}) => {
                 if (res.success && res.message) {
                     try {
                         // 문자열이면 후처리
-                        const cleaned =
-                            typeof res.message === 'string'
-                                ? res.message
-                                    .replace(/,\s*}/g, '}')   // 마지막 객체 항목 쉼표 제거
-                                    .replace(/,\s*]/g, ']')   // 마지막 배열 항목 쉼표 제거
-                                : res.message;
+                        const cleaned = res.message
+                            .replace(/,\s*}/g, '}')
+                            .replace(/,\s*]/g, ']');
 
                         setGptAnswer(cleaned);
                     } catch (err) {
@@ -135,7 +132,7 @@ const Consulting: React.FC<Props> = ({checkToken}) => {
             }
         })();
 
-    }, [jobId]);
+    }, [checkToken, jobId, navigate]);
 
     useEffect(() => {
         if (!gptAnswer) return;

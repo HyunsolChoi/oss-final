@@ -1,7 +1,7 @@
 .wrapper-footer {
     display: flex;
     flex-direction: column;
-    min-height: auto;
+    min-height: 100vh;
 }
 
 .show-toggle-2 {

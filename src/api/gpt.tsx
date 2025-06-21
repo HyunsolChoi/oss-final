@@ -51,6 +51,7 @@ export async function generateQuestions(data: {
     }
 }
 
+
 // 질문과 답변 저장
 export async function updateQuestionsAndAnswers(data: {
     userId: string;

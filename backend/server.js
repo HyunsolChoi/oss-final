@@ -7,7 +7,7 @@ const authRouter = require('./routes/auth');
 const userRouter = require('./routes/user');
 const gptRouter = require('./routes/gpt');
 const bookmarkRouter = require('./routes/bookmark');
-const { startCleanupScheduler } = require('./Utils/cleaner');
+const { startScheduler } = require('./Utils/scheduler');
 
 const app = express();
 app.use(cors());
@@ -26,7 +26,7 @@ app.use('/api/gpt', gptRouter);
 // 즐겨찾기 라우터
 app.use('/api/bookmark', bookmarkRouter);
 
-startCleanupScheduler();
+startScheduler();
 
 const port = process.env.PORT || 5000;
 app.listen(port, () => console.log(`Server running on port ${port}`));

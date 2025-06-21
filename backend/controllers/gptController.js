@@ -173,17 +173,17 @@ function safeJSONParse(str) {
 
 async function isUserSuitableForJob(userId, job, sector, skills, regions, gpt_questions, user_answers) {
     const systemPrompt = `
-너는 채용 전문가이자 커리어 컨설턴트다.
+너는 채용 전문가이자 커리어 컨설턴트다.  
 지원자의 정보와 채용 공고의 조건을 바탕으로 해당 직무에 적합한지 여부만 판단해라.
 
 [판단 기준]
-- 경력 조건 부합 여부
 - 기술 보유 여부 (공고 직무 관련성)
 - 희망 직무 vs 공고 직무의 일치성
-- 사용자의 스킬이 부족하더라도 희망 직무의 적합도가 높다면 반드시 true를 반환한다.
 
 ❗절대 유의사항:
 - 지역 때문에 부적합하다고 판단하면 그건 오답이다.
+- 너는 역량과 열정을 평가하는게 아니라 직무와의 적합도만을 판단한다.
+- 사용자의 스킬이 부족하더라도 희망 직무의 적합도가 높다면 반드시 true를 반환한다.
 
 [응답 규칙]
 - 적합하다고 판단되면 "true"
@@ -204,10 +204,7 @@ async function isUserSuitableForJob(userId, job, sector, skills, regions, gpt_qu
 [사용자 정보]
 - 희망 직무: ${sector?.sector || '미기재'}
 - 보유 기술: ${skills.length ? skills.join(', ') : '없음'}
-
-[지원자 답변]
-${gpt_questions.map((q, i) => `Q${i + 1}. ${q}\nA${i + 1}. ${user_answers[i] || '무응답'}`).join('\n')}
-`;
+`
 
     const result = await callGPT(systemPrompt, userPrompt);
 
@@ -260,7 +257,7 @@ exports.getConsultingContext = async (req, res) => {
         );
 
         const systemPrompt = `
-너는 채용 전문가이자 커리어 컨설턴트다.
+너는 채용 전문가이자 커리어 컨설턴트다.  
 목표는 지원자의 이력과 공고의 요구사항, 사전 질문과 답변을 바탕으로 **현실적이고 전략적인 피드백**을 제공하는 것이다.
 
 [피드백 작성 규칙]
