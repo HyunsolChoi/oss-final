@@ -216,7 +216,18 @@ async function createTables() {
                 PRIMARY KEY (user_id, job_posting_id),
                 FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
                 FOREIGN KEY (job_posting_id) REFERENCES job_postings(job_posting_id) ON DELETE CASCADE
-            );`
+            );`,
+
+            // 26. 컨설팅 갱신 횟수 테이블
+            `CREATE TABLE consultation_retries (
+                 user_id VARCHAR(30) NOT NULL,
+                 job_posting_id BIGINT NOT NULL,
+                 retry_date DATE NOT NULL,
+                 retry_count INT DEFAULT 1,
+                 PRIMARY KEY (user_id, job_posting_id, retry_date),
+                 FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+                 FOREIGN KEY (job_posting_id) REFERENCES job_postings(job_posting_id) ON DELETE CASCADE
+             );`
         ];
 
         let cntErr = 0;

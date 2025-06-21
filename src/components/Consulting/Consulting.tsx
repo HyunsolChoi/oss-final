@@ -22,6 +22,7 @@ const Consulting: React.FC<Props> = ({checkToken}) => {
     const [uId, setUId] = useState('');
     const [starred, setStarred] = useState(false);
     const [isConsultingRetry, setIsConsultingRetry] = useState(false);
+    const [retryAvailable, setRetryAvailable] = useState(true);
 
     const navigate = useNavigate();
 
@@ -37,6 +38,11 @@ const Consulting: React.FC<Props> = ({checkToken}) => {
 
     const handleRetry = async () => {
         if (!jobInfo || !uId) return;
+
+        if (!retryAvailable) {
+            toast.error('하루에 한 번만 갱신할 수 있습니다. 내일 다시 시도해주세요.');
+            return;
+        }
 
         try {
             setLoading(true);
@@ -55,11 +61,15 @@ const Consulting: React.FC<Props> = ({checkToken}) => {
                             : res.message;
 
                     setGptAnswer(cleaned);
+                    setRetryAvailable(false); // 갱신 후 비활성화
                 } catch (err) {
                     console.error('GPT 응답 후처리 오류:', err);
                     toast.error('GPT 응답 처리 중 오류가 발생했습니다');
                 }
             } else {
+                if (res.message?.includes('하루에 한 번만')) {
+                    setRetryAvailable(false);
+                }
                 toast.error(res.message || '컨설팅 갱신 실패');
             }
         } catch (err) {
@@ -119,6 +129,11 @@ const Consulting: React.FC<Props> = ({checkToken}) => {
                                 : res.message;
 
                         setGptAnswer(cleaned);
+
+                        // retryAvailable 상태 설정
+                        if (res.retryAvailable !== undefined) {
+                            setRetryAvailable(res.retryAvailable);
+                        }
                     } catch (err) {
                         console.error('GPT 응답 후처리 오류:', err);
                         toast.error('GPT 응답 처리 중 오류가 발생했습니다');
@@ -224,11 +239,11 @@ const Consulting: React.FC<Props> = ({checkToken}) => {
                         <div className="consulting-actions">
                             <button
                                 type = "button"
-                                className={`consulting-retry ${isConsultingRetry ? ' loading' : ''}`}
+                                className={`consulting-retry ${isConsultingRetry ? ' loading' : ''} ${!retryAvailable ? ' disabled' : ''}`}
                                 onClick={handleRetry}
-                                disabled={isConsultingRetry}
+                                disabled={isConsultingRetry || !retryAvailable}
                             >
-                                컨설팅 갱신
+                                {!retryAvailable ? '내일 다시 갱신 가능' : '컨설팅 갱신'}
                             </button>
                         </div>
                     </div>
