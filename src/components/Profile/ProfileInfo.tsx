@@ -107,6 +107,7 @@ const ProfileInfo: React.FC<Props> = ({ userId }) => {
         return regex.test(text);
     };
 
+
     const generateGptQuestion = async () => {
         if (isGenerating) return;
 

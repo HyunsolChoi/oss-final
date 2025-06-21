@@ -43,6 +43,7 @@ function startCleanupScheduler() {
     cleanupExpiredTokens().catch(console.error);
     cleanupExpiredVerificationCodes().catch(console.error);
     cleanupManageView().catch(console.error);
+    cleanupConsultationRetries().catch(console.error);
 
     setInterval(() => {
         cleanupExpiredTokens().catch(console.error);
@@ -52,6 +53,35 @@ function startCleanupScheduler() {
     setInterval(() => {
         cleanupManageView().catch(console.error);
     }, 10 * 60 * 1000); // 10분
+
+    // 매일 00:00에 컨설팅 갱신 기록 정리
+    const now = new Date();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
+
+    const msUntilMidnight = tomorrow.getTime() - now.getTime();
+
+    setTimeout(() => {
+        cleanupConsultationRetries().catch(console.error);
+        // 이후 매일 자정에 실행
+        setInterval(() => {
+            cleanupConsultationRetries().catch(console.error);
+        }, 24 * 60 * 60 * 1000); // 24시간
+    }, msUntilMidnight);
+}
+
+//컨설팅 갱신 횟수 정리
+async function cleanupConsultationRetries() {
+    try {
+        await executeQuery(`
+            DELETE FROM consultation_retries
+            WHERE retry_date < CURDATE()
+        `);
+        console.log(`[컨설팅 갱신 클리너] 이전 날짜 기록 삭제 완료`);
+    } catch (error) {
+        console.error('[컨설팅 갱신 클리너 오류]:', error.message);
+    }
 }
 
 module.exports = { startCleanupScheduler };

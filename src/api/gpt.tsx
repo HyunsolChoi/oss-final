@@ -4,6 +4,7 @@ import { Job } from './jobs'
 export async function getConsulting(userId: string, job: Job, isRetry = false): Promise<{
     success: boolean;
     message: string;
+    retryAvailable?: boolean;
 }> {
     try {
         const response = await fetch('/api/gpt/consulting', {
@@ -16,13 +17,15 @@ export async function getConsulting(userId: string, job: Job, isRetry = false): 
 
         return {
             success: result.success,
-            message: result.answer
+            message: result.answer,
+            retryAvailable: result.retryAvailable
         };
     } catch (error) {
         console.error('컨설팅 요청 실패:', error);
         return { success: false, message: '서버와의 통신 중 오류 발생'};
     }
 }
+
 
 // GPT 질문 생성 요청
 export async function generateQuestions(data: {
@@ -99,3 +102,4 @@ export async function generateUserKeywords(userId: string): Promise<{
         return { success: false, message: '서버와의 통신 중 오류 발생' };
     }
 }
+
