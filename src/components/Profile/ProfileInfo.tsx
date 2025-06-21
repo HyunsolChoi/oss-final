@@ -3,6 +3,9 @@ import { toast } from 'react-toastify';
 import './Profile.css';
 import {getUserProfile, updateUserProfile} from '../../api/user';
 import {generateQuestions, updateQuestionsAndAnswers, generateUserKeywords} from '../../api/gpt';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faSpinner } from '@fortawesome/free-solid-svg-icons';
+
 
 interface Props {
     userId: string;
@@ -25,6 +28,7 @@ const ProfileInfo: React.FC<Props> = ({ userId }) => {
     const [currentQuestion, setCurrentQuestion] = useState(1);
     const [questions, setQuestions] = useState<string[]>([]);
     const [answers, setAnswers] = useState<string[]>(['', '', '', '']);
+    const [isGenerating, setIsGenerating] = useState(false);
 
     const [userData, setUserData] = useState<UserData>({
         job: '',
@@ -104,6 +108,8 @@ const ProfileInfo: React.FC<Props> = ({ userId }) => {
     };
 
     const generateGptQuestion = async () => {
+        if (isGenerating) return;
+
         const job = userData.job.trim();
         const validSkills = userData.skills.map((sk) => sk.trim()).filter((sk) => sk !== '');
 
@@ -139,6 +145,8 @@ const ProfileInfo: React.FC<Props> = ({ userId }) => {
         }
 
         try {
+            setIsGenerating(true);
+
             const gpt = await generateQuestions({
                 job: job,
                 skills: validSkills,
@@ -169,6 +177,8 @@ const ProfileInfo: React.FC<Props> = ({ userId }) => {
 
         } catch (err: any) {
             toast.error(err.message || '질문 생성 중 오류 발생');
+        } finally {
+             setIsGenerating(false);
         }
     };
 
@@ -409,10 +419,18 @@ const ProfileInfo: React.FC<Props> = ({ userId }) => {
                         {editMode && (
                             <button
                                 type="button"
-                                className="edit-button full-width"
+                                className={`edit-button full-width${isGenerating ? ' loading' : ''}`}
                                 onClick={generateGptQuestion}
+                                disabled={isGenerating}
                             >
-                                다음
+                                {isGenerating ? (
+                                    <>
+                                        <FontAwesomeIcon icon={faSpinner} spin style={{ marginRight: '8px' }} />
+                                        질문 생성 중...
+                                    </>
+                                ) : (
+                                    '다음'
+                                )}
                             </button>
                         )}
                     </div>
