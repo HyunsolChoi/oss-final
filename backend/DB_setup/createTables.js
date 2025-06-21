@@ -219,7 +219,7 @@ async function createTables() {
             );`,
 
             // 26. 컨설팅 갱신 횟수 테이블
-            `CREATE TABLE consultation_retries (
+            `CREATE TABLE IF NOT EXISTS consultation_retries (
                  user_id VARCHAR(30) NOT NULL,
                  job_posting_id BIGINT NOT NULL,
                  retry_date DATE NOT NULL,
