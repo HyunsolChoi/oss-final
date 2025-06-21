@@ -156,8 +156,8 @@ const Signup: React.FC<Props> = ({ email }) => {
             const result = await generateQuestions({
                 job: job.trim(),
                 skills: trimmed,
-                education,
-                region
+                education: education,
+                region: region
             });
 
             if (result.success && result.questions) {

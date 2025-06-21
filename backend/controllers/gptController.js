@@ -374,44 +374,54 @@ exports.generateGPTQuestions = async (req, res) => {
     }
 };
 
-// 질문과 답변 저장 API => 혹시라도 질문 더 만다는 기능 추가로 활용 가능
-exports.saveQuestionsAndAnswers = async (req, res) => {
+// (user_id 단위로 전부 지우고, 새 4개 질문·답변을 저장)
+exports.updateQuestionsAndAnswers = async (req, res) => {
     const { userId, questions, answers } = req.body;
 
-    if (!userId || !questions || !answers || questions.length !== answers.length) {
-        return res.status(400).json({
-            success: false,
-            message: '유효하지 않은 데이터입니다'
-        });
+    // 구조,타입 검사
+    if (
+        !userId ||
+        !Array.isArray(questions) ||
+        !Array.isArray(answers) ||
+        questions.length !== answers.length
+    ) {
+    return res
+      .status(400)
+      .json({ success: false, message: '유효하지 않은 데이터' });
     }
 
     try {
-        // 각 질문과 답변을 저장
-        const queries = [];
-        for (let i = 0; i < questions.length; i++) {
-            // 질문 저장
-            if(questions[i].trim() && answers[i].trim()){
-                queries.push({
-                    query: `INSERT INTO user_gpt (user_id, gpt_question, user_answers) VALUES (?, ?, ?)`,
-                    params: [userId, questions[i].trim(), answers[i].trim()]
-                });
-            }
-        }
+        /**
+         *  1. user_id 기준 기존 행 전체 삭제
+         *  2. 새 질문·답변 INSERT (trim & 타입 검사 포함)
+         */
+        const queries = [
+          {
+            query: 'DELETE FROM user_gpt WHERE user_id = ?',
+            params: [userId],
+          },
+          ...questions
+            .map((q, idx) => {
+              const a = answers[idx];
+              if (typeof q !== 'string' || typeof a !== 'string') return null;
+              const qq = q.trim();
+              const aa = a.trim();
+              return qq && aa
+                ? {
+                    query:
+                      'INSERT INTO user_gpt (user_id, gpt_question, user_answer) VALUES (?, ?, ?)',
+                    params: [userId, qq, aa],
+                  }
+                : null;
+            })
+            .filter(Boolean),
+        ];
 
-        // 답변 저장
-        if (queries.length > 0) {
-            await executeTransaction(queries);
-        }
+        if (queries.length > 1) await executeTransaction(queries);
 
-        return res.json({
-            success: true,
-            message: '질문과 답변이 저장되었습니다'
-        });
+        return res.json({ success: true, message: '질문/답변 갱신 완료' });
     } catch (error) {
-        console.error('질문/답변 저장 오류:', error);
-        return res.status(500).json({
-            success: false,
-            message: '저장 중 오류가 발생했습니다'
-        });
+        console.error('updateQuestionsAndAnswers error:', error.stack || error);
+        return res.status(500).json({ success: false, message: '갱신 중 오류' });
     }
 };

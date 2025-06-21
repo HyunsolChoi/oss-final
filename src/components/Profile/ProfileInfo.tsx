@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import './Profile.css';
 import {getUserProfile, updateUserProfile} from '../../api/user';
+import {generateQuestions, updateQuestionsAndAnswers} from '../../api/gpt';
 
 interface Props {
     userId: string;
@@ -19,8 +20,11 @@ const ProfileInfo: React.FC<Props> = ({ userId }) => {
     const [showNewForm, setShowNewForm] = useState(false);
     const [newFormAnimating, setNewFormAnimating] = useState(false);
     const [isTransitioning, setIsTransitioning] = useState(false);
+
+    //gpt질문
     const [currentQuestion, setCurrentQuestion] = useState(1);
-    const [answers, setAnswers] = useState<string[]>(['', '', '']);
+    const [questions, setQuestions] = useState<string[]>([]);
+    const [answers, setAnswers] = useState<string[]>(['', '', '', '']);
 
     const [userData, setUserData] = useState<UserData>({
         job: '',
@@ -41,25 +45,6 @@ const ProfileInfo: React.FC<Props> = ({ userId }) => {
         '서울특별시', '부산광역시', '대구광역시', '인천광역시', '광주광역시',
         '대전광역시', '울산광역시', '세종특별자치시', '경기도', '강원특별자치도',
         '충청북도', '충청남도', '전북특별자치도', '전라남도', '경상북도', '경상남도', '제주특별자치도'
-    ];
-
-    // GPT가 생성할 질문들 (실제로는 API에서 받아올 수 있음)
-    const gptQuestions = [
-        {
-            id: 1,
-            question: `${userData.job} 직무에서 가장 자신있는 프로젝트나 업무 경험을 설명해주세요.`,
-            placeholder: "예: 신규 서비스 개발 프로젝트를 주도하여..."
-        },
-        {
-            id: 2,
-            question: `${userData.skills.join(', ')} 기술을 활용한 구체적인 사례를 알려주세요.`,
-            placeholder: "예: React와 Node.js를 활용하여..."
-        },
-        {
-            id: 3,
-            question: "앞으로의 커리어 목표와 성장 계획은 무엇인가요?",
-            placeholder: "예: 3년 내에 시니어 개발자로 성장하여..."
-        }
     ];
 
     // 추가 및 삭제 핸들러
@@ -152,18 +137,18 @@ const ProfileInfo: React.FC<Props> = ({ userId }) => {
         }
 
         try {
-            // 먼저 사용자 정보 저장
-            const result = await updateUserProfile({
-                userId,
-                sector: job,
-                education: userData.education.trim(),
-                region: userData.region.trim(),
+            const gpt = await generateQuestions({
+                job: job,
                 skills: validSkills,
+                education: userData.education,
+                region: userData.region
             });
 
-            if (!result.success) {
-                toast.error(result.message || '정보 저장 실패');
-                return;
+            if (gpt.success && gpt.questions) {
+                setQuestions(gpt.questions);
+                setAnswers(new Array(gpt.questions.length).fill(''));
+            } else {
+                toast.error(gpt.message || '질문 생성에 실패했습니다');
             }
 
             // 애니메이션 시작
@@ -191,18 +176,41 @@ const ProfileInfo: React.FC<Props> = ({ userId }) => {
         setAnswers(updatedAnswers);
     };
 
-    const handleNextQuestion = () => {
+    const handleNextQuestion = async () => {
         if (!answers[currentQuestion - 1].trim()) {
             toast.error('답변을 입력해주세요');
             return;
         }
 
-        if (currentQuestion < gptQuestions.length) {
+        if (currentQuestion < questions.length) {
             setCurrentQuestion(currentQuestion + 1);
         } else {
-            // 모든 질문 완료
             toast.success('모든 질문에 답변해주셔서 감사합니다!');
-            // 여기서 답변들을 서버로 전송할 수 있습니다
+
+            const job = userData.job.trim();
+            const validSkills = userData.skills.map((sk) => sk.trim()).filter((sk) => sk !== '');
+
+            // 질문들 DB 저장
+            let result = await updateQuestionsAndAnswers({userId, questions, answers});
+
+            if (!result.success) {
+                toast.error(result.message || '정보 저장 실패');
+                return;
+            }
+
+            //사용자 정보 DB 저장
+            result = await updateUserProfile({
+                userId,
+                sector: job,
+                education: userData.education.trim(),
+                region: userData.region.trim(),
+                skills: validSkills,
+            });
+
+            if (!result.success) {
+                toast.error(result.message || '정보 저장 실패');
+                return;
+            }
 
             // 애니메이션과 함께 원래 상태로 복귀
             setNewFormAnimating(false);
@@ -210,7 +218,7 @@ const ProfileInfo: React.FC<Props> = ({ userId }) => {
                 setShowNewForm(false);
                 setIsTransitioning(false);
                 setCurrentQuestion(1);
-                setAnswers(['', '', '']);
+                setAnswers(['', '', '','']);
             }, 400);
         }
     };
@@ -228,7 +236,7 @@ const ProfileInfo: React.FC<Props> = ({ userId }) => {
                setShowNewForm(false);
                setEditMode(true);
                setCurrentQuestion(1);
-               setAnswers(['', '', '']);
+               setAnswers(['', '', '','']);
            }, 400); // CSS transition 시간과 동일
        }
    };
@@ -237,23 +245,22 @@ const ProfileInfo: React.FC<Props> = ({ userId }) => {
     const renderNewInfoForm = () => (
         <div className={`new-info-form ${newFormAnimating ? 'slide-in' : ''}`}>
             <div className="new-form-wrapper">
-                <h2>추가 질문 ({currentQuestion}/{gptQuestions.length})</h2>
+                <h2>추가 질문 ({currentQuestion}/{questions.length})</h2>
 
                 <div className="question-progress">
                     <div
                         className="progress-bar"
-                        style={{width: `${(currentQuestion / gptQuestions.length) * 100}%`}}
+                        style={{width: `${(currentQuestion / questions.length) * 100}%`}}
                     />
                 </div>
 
                 <form className="info-form">
                     <div className="question-content">
-                        <h3>{gptQuestions[currentQuestion - 1].question}</h3>
+                        <h3>{questions[currentQuestion - 1]}</h3>
                         <textarea
                             rows={6}
                             value={answers[currentQuestion - 1]}
                             onChange={(e) => handleAnswerChange(e.target.value)}
-                            placeholder={gptQuestions[currentQuestion - 1].placeholder}
                             className="question-textarea"
                         />
                     </div>
@@ -273,7 +280,7 @@ const ProfileInfo: React.FC<Props> = ({ userId }) => {
                                 className="edit-button"
                                 onClick={handleNextQuestion}
                             >
-                                {currentQuestion === gptQuestions.length ? '완료' : '다음'}
+                                {currentQuestion === questions.length ? '완료' : '다음'}
                             </button>
                         </div>
                     </div>
