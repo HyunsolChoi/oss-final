@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import './Signup.css';
@@ -34,7 +34,7 @@ const Agreement: React.FC = () => {
 
             // 동의 완료 쿠키에 기록
             document.cookie = [
-                'agreementAccepted=true',
+                'careerfit_agreementAccepted=true',
                 'path=/',
                 'max-age=3600',       // 1시간(초 단위)
                 'sameSite=Lax',

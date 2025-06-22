@@ -1,20 +1,39 @@
 import React, {useEffect, useState} from 'react';
 import './Signup.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUser, faLock, faBriefcase, faLightbulb  } from '@fortawesome/free-solid-svg-icons';
+import { faUser, faLock, faBriefcase, faLightbulb, faQuestionCircle  } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'react-toastify';
+import { checkDuplicateId, signup } from '../../api/auth';
+import {generateQuestions, generateUserKeywords} from '../../api/gpt';
 import {useNavigate} from "react-router-dom";
 
-const Signup: React.FC = () => {
+interface Props {
+    email: string;
+}
+
+const Signup: React.FC<Props> = ({ email }) => {
+    // 페이지 단계 관리
+    const [pageStep, setPageStep] = useState<number>(1);
+
+    // (아이디/비밀번호)
     const [userId, setUserId] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [confirmPassword, setConfirmPassword] = useState('');
+
+    // (학력/지역/직무/기술)
     const [education, setEducation] = useState('');
     const [region, setRegion] = useState('');
-    const [showNext, setShowNext ] = useState(false);
     const [job, setJob] = useState('');
     const [skills, setSkills] = useState<string[]>(['']);
+    const [trimmedSkills, setTrimmedSkills] = useState<string[]>([]);
+
+    // (질문 4개 + 각 질문별 답변)
+    const [questions, setQuestions] = useState<string[]>([]);
+    const [answers, setAnswers] = useState<string[]>(['', '', '', '']);
+    const [loadingQuestions, setLoadingQuestions] = useState(false);
+
+    const [isSigningUp, setIsSigningUp] = useState(false); // 회원가입 중복 호출 방지
 
     const navigate = useNavigate();
 
@@ -44,26 +63,166 @@ const Signup: React.FC = () => {
         return regex.test(pwd);
     };
 
+    const isValidJob = (text: string): boolean => {
+        const regex = /^[a-zA-Z0-9가-힣/()&.+#]+$/;
+        return regex.test(text);
+    };
+
+    const isValidSkill = (text: string): boolean => {
+        const regex = /^[a-zA-Z0-9가-힣().+]+$/;
+        return regex.test(text);
+    };
+
     const hasDuplicateSkills = (skills: string[]): boolean => {
         const trimmed = skills.map(s => s.trim()).filter(s => s !== '');
         const unique = new Set(trimmed);
         return unique.size !== trimmed.length;
     };
 
-    const signupComplete = () => {
-        if(!isValidUserId(userId) || !isValidPwd(password) || userId===password){
-            toast.error("유효하지 않은 아이디와 비밀번호 입니다.")
+    const signupComplete = async () => {
+        if (isSigningUp) return;
+        setIsSigningUp(true);
+
+        // 모든 답변이 입력되었는지 확인
+        const filledAnswers = answers.filter(a => a.trim() !== '');
+        if (filledAnswers.length !== questions.length) {
+            toast.error('모든 질문에 답변해주세요');
+            setIsSigningUp(false);
             return;
         }
+
+        try {
+            const result = await signup({
+                userId,
+                email,
+                password,
+                sector: job,
+                education,
+                region,
+                skills: trimmedSkills,
+                questions,
+                answers
+            });
+
+            if (result.success) {
+                const keywordResult = await generateUserKeywords(userId);
+
+                if (!keywordResult.success) {
+                    console.warn('키워드 생성 실패 & 재실행:', keywordResult.message);
+                    await generateUserKeywords(userId);
+                }
+                toast.success("회원가입 성공!");
+                navigate("/signin");
+            } else {
+                toast.error(result.message || "회원가입에 실패했습니다");
+            }
+        } catch (err: any) {
+            toast.error(err.message || "회원가입 중 오류 발생");
+        } finally {
+            setIsSigningUp(false);
+        }
+    };
+
+    const checkValidUserKeyword = async () => {
+        if (!job.trim()) {
+            toast.error("직무를 입력해주세요");
+            return;
+        }
+
+        if (job.trim().length > 15) {
+            toast.error("직무는 15글자 이하로 입력해주세요");
+            return;
+        }
+
+        if (!isValidJob(job)) {
+            toast.error("직무는 한글, 영어, 숫자, / ( ) & . + # 만 입력 가능합니다");
+            return;
+        }
+
+        const trimmed = skills.map(s => s.trim()).filter(s => s !== '');
+        setTrimmedSkills(trimmed);
+
+        if (trimmed.length === 0) {
+            toast.error("하나 이상의 기술을 입력해주세요");
+            return;
+        }
+
         if (hasDuplicateSkills(skills)) {
-            toast.error("기술 항목에 중복된 값이 있습니다.");
+            toast.error("기술 항목에 중복된 값이 있습니다");
             return;
         }
 
-        // todo : DB로 사용자 입력 정보 모두 보내기
+        for (const skill of trimmed) {
+            if (skill.length > 20) {
+                toast.error(`기술 '${skill}'은 20글자 이하로 입력해주세요`);
+                return;
+            }
 
-        navigate("/signin");
-    }
+            if (!isValidSkill(skill)) {
+                toast.error(`기술 '${skill}'은 허용되지 않는 문자를 포함하고 있습니다`);
+                return;
+            }
+        }
+
+        // GPT 질문 생성
+        setLoadingQuestions(true);
+        try {
+            const result = await generateQuestions({
+                job: job.trim(),
+                skills: trimmed,
+                education,
+                region
+            });
+
+            if (result.success && result.questions) {
+                setQuestions(result.questions);
+                setAnswers(new Array(result.questions.length).fill(''));
+                setPageStep(3);
+            } else {
+                toast.error(result.message || '질문 생성에 실패했습니다');
+            }
+        } catch (error) {
+            toast.error('질문 생성 중 오류가 발생했습니다');
+        } finally {
+            setLoadingQuestions(false);
+        }
+    };
+
+    const checkValidIdPwd = async () => {
+        if (!userId || !password || !confirmPassword) {
+            toast.error("모든 항목을 입력해주세요");
+            return;
+        }
+        if (!isValidUserId(userId)) {
+            toast.error("아이디는 영문자 및 숫자 6~20자여야 합니다");
+            return;
+        }
+        if (!isValidPwd(password)) {
+            toast.error("비밀번호는 영문자, 숫자 및 특수문자(!, @) 8~15자여야 합니다");
+            return;
+        }
+        if (password !== confirmPassword) {
+            toast.error("비밀번호가 일치하지 않습니다");
+            return;
+        }
+        if (userId === password) {
+            toast.error("아이디와 비밀번호는 같을 수 없습니다");
+            return;
+        }
+
+        try {
+            const isAvailable = await checkDuplicateId(userId);
+            if (!isAvailable) {
+                toast.error("이미 존재하는 아이디입니다");
+                return;
+            }
+        } catch (err: any) {
+            toast.error(err.message || "아이디 중복 확인 중 오류 발생");
+            return;
+        }
+
+        setPageStep(2);
+    };
 
     useEffect(() => {
         const cookies = document.cookie
@@ -71,27 +230,25 @@ const Signup: React.FC = () => {
             .map(cookie => cookie.trim());
 
         const hasAgreement = cookies.some(cookie =>
-            cookie.startsWith('agreementAccepted=')
+            cookie.startsWith('careerfit_agreementAccepted=')
         );
         const hasEmailVerified = cookies.some(cookie =>
-            cookie.startsWith('emailVerified=')
+            cookie.startsWith('careerfit_emailVerified=')
         );
 
         if (!hasAgreement || !hasEmailVerified) {
-            // 약관 동의가 없으면 동의 페이지로
-            toast.error("세션이 만료되어 동의 페이지로 이동합니다")
+            toast.error("세션이 만료되어 동의 페이지로 이동합니다");
             navigate('/agreement');
         }
-    }, []);
-
+    }, [navigate]);
 
     return (
         <div className="signup-wrapper">
             <h2>회원가입</h2>
 
-            {!showNext ? (
+            {/*─────────── 1단계: 아이디/비밀번호 입력 ───────────*/}
+            {pageStep === 1 && (
                 <>
-                    {/* 아이디, 비밀번호 입력 단계 */}
                     <div className="input-group">
                         <FontAwesomeIcon icon={faUser} className="input-icon"/>
                         <input
@@ -112,10 +269,9 @@ const Signup: React.FC = () => {
                         />
                         <span
                             className="show-toggle"
-                            onClick={() => setShowPassword(!showPassword)}
-                        >
+                            onClick={() => setShowPassword(!showPassword)}>
                             비밀번호 표시
-                          </span>
+                        </span>
                     </div>
 
                     <div className="input-group">
@@ -130,32 +286,18 @@ const Signup: React.FC = () => {
 
                     <button
                         className="signup-button"
-                        onClick={() => {
-                            if (!userId || !password || !confirmPassword) {
-                                toast.error("모든 항목을 입력해주세요.");
-                                return;
-                            }
-                            if (!isValidUserId(userId)) {
-                                toast.error("아이디는 영문자 및 숫자 6~20자여야 합니다.");
-                                return;
-                            }
-                            if (!isValidPwd(password)) {
-                                toast.error("비밀번호는 영문자, 숫자 및 특수문자(!, @) 8~15자여야 합니다.");
-                                return;
-                            }
-                            if(userId === password){
-                                toast.error("아이디와 비밀번호는 같을 수 없습니다.");
-                                return;
-                            }
-                            setShowNext(true);
+                        onClick={async () => {
+                            await checkValidIdPwd();
                         }}
                     >
                         다음
                     </button>
                 </>
-            ) : (
+            )}
+
+            {/*─────────── 2단계: 학력/지역/직무/기술 입력 ───────────*/}
+            {pageStep === 2 && !loadingQuestions && (
                 <>
-                    {/* 직무 및 기술 입력 단계 */}
                     <div className="input-description">
                         최종 학력을 선택해주세요
                     </div>
@@ -165,13 +307,13 @@ const Signup: React.FC = () => {
                             onChange={(e) => setEducation(e.target.value)}
                         >
                             <option value="">학력 선택</option>
-                            <option value="noInput">미입력</option>
-                            <option value="middleschool">중학교 졸업</option>
-                            <option value="highschool">고등학교 졸업</option>
-                            <option value="associate">전문학사 (2~3년제)</option>
-                            <option value="bachelor">학사</option>
-                            <option value="master">석사</option>
-                            <option value="doctorate">박사</option>
+                            <option value="미입력">미입력</option>
+                            <option value="중졸">중학교 졸업</option>
+                            <option value="고졸">고등학교 졸업</option>
+                            <option value="전문학사">전문학사 (2~3년제)</option>
+                            <option value="학사">학사</option>
+                            <option value="석사">석사</option>
+                            <option value="박사">박사</option>
                         </select>
                     </div>
 
@@ -204,7 +346,6 @@ const Signup: React.FC = () => {
                             <option value="제주특별자치도">제주특별자치도</option>
                         </select>
                     </div>
-
 
                     <div className="input-description">
                         <span className="pointer">*</span> 예: 백엔드, 재무회계, 세무사 등 (개발자, 담당자 등의 키워드 제외)
@@ -252,31 +393,100 @@ const Signup: React.FC = () => {
                         <button
                             className="signup-button"
                             style={{flex: 1}}
-                            onClick={() => setShowNext(false)} // 🔙 이전 단계로 전환
+                            onClick={() => setPageStep(1)} // 이전 단계로 전환
                         >
                             이전
                         </button>
 
                         <button
                             className="signup-button"
-                            style={{flex: 3}}
-                            onClick={() => {
+                            style={{flex: 1}}
+                            onClick={async () => {
                                 if (!job || skills.filter(s => s.trim() !== '').length === 0 || !education || !region) {
                                     toast.error("모든 항목을 입력해주세요.");
                                     return;
                                 }
-                                // 가입 완료 처리
-                                signupComplete();
+                                await checkValidUserKeyword();
                             }}
+                            disabled={loadingQuestions}
                         >
-                            가입 완료
+                            {loadingQuestions ? '질문 생성 중...' : '다음'}
                         </button>
+                    </div>
+                </>
+            )}
+
+            {/* 로딩 화면 */}
+            {loadingQuestions && (
+                <div className="loading-screen">
+                    <FontAwesomeIcon
+                        icon={faQuestionCircle}
+                        size="3x"
+                        style={{
+                            color: '#6366f1',
+                            animation: 'spin 2s linear infinite'
+                        }}
+                    />
+                    <p>잠시만 기다려주세요... 질문을 생성 중입니다.</p>
+                </div>
+            )}
+
+            {/*─────────── 3단계: 질문 생성 & 답변 입력 ───────────*/}
+            {pageStep === 3 && !loadingQuestions && (
+                <>
+                    <div className="gpt-input-wrapper">
+                        <div className="input-description">
+                            아래 질문에 대해 답변해 주세요
+                        </div>
+
+                        {questions.map((question, idx) => (
+                            <div key={idx} className="question-block">
+                                <label className="question-label">
+                                    {idx + 1}. {question}
+                                </label>
+
+                                <div className="input-gpt-answer">
+                                    <textarea
+                                        placeholder="답변을 입력하세요"
+                                        value={answers[idx] || ''}
+                                        onChange={(e) => {
+                                            const newAnswers = [...answers];
+                                            newAnswers[idx] = e.target.value;
+                                            setAnswers(newAnswers);
+                                        }}
+                                        maxLength={200} //200자 제한
+                                        rows={3}
+                                        style={{ paddingLeft: '12px'}}
+                                    />
+                                    <div className="char-count">
+                                        { (answers[idx] || '').length} / 200
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                        <div
+                            className="button-wrapper"
+                        >
+                            <button
+                                className="signup-button"
+                                onClick={() => setPageStep(2)}
+                            >
+                                이전
+                            </button>
+                            <button
+                                className="signup-button"
+                                style={{ flex: 3 }}
+                                onClick={signupComplete}
+                                disabled={isSigningUp}
+                            >
+                                가입 완료
+                            </button>
+                        </div>
                     </div>
                 </>
             )}
         </div>
     );
-
 };
 
 export default Signup;

@@ -1,24 +1,65 @@
-// src/components/Home.tsx
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
 import './Home.css';
-import { Job, getLatestJobs, getTop100Jobs, getEntryLevelJobs, getMyJobs } from '../../api/jobs'
+import { Job, getRandomJobs, getTop100Jobs, getEntryLevelJobs, getMyJobs, getRecommendedJobs } from '../../api/jobs'
 import {useNavigate} from "react-router-dom";
+import Footer from "../utils/Footer/Footer";
+import {toast} from "react-toastify";
+import Map from "../utils/Map/Map";
+import {normalizeRegion} from "../utils/Utils";
 
 interface Props {
     userId: string;
     activeTab: 'Top100' | 'Entry' | 'MyJob';
-    setActiveTab: (tab: 'Top100' | 'Entry' | 'MyJob') => void;
     activeTabHandler: (menu: 1 | 2 | 3) => void;
 }
 
-const Home: React.FC<Props> = ({ userId, activeTab, setActiveTab, activeTabHandler }) => {
-    const [recommendJobs, setLatestJobs] = useState<Job[]>([]);
+const Home: React.FC<Props> = ({ userId, activeTab, activeTabHandler }) => {
+    const [recommendJobs, setRecommendJobs] = useState<Job[]>([]);
     const [topJobs,  setTopJobs]    = useState<Job[]>([]);
     const [entryJobs,  setEntryJobs]  = useState<Job[]>([]);
     const [myJobs, setMyJobs] = useState<Job[]>([]);
 
-    //const [showJobs, setShowJobs] = useState<Job[]>([]); // 실제로 화면에 나오는 공고 ( Top100, Entry )
+    const [JobsByRegion, setJobsByRegion] = useState<Job[]>([]);
+    const [selectedRegion, setSelectedRegion] = useState<string>('');
+
+    const [visibleCount, setVisibleCount] = useState(50);
+
     const navigate = useNavigate();
+    const loadMoreRef = React.useRef<HTMLDivElement | null>(null);
+
+    const postClickHandler = (jobId : number) => {
+        if(jobId <= 0 && jobId === null){
+            toast.error("유효하지 않은 공고");
+            return;
+        }
+        navigate(`/consulting/${jobId}`);
+        return;
+    }
+
+    const handleRegionClick = useCallback(async (region: string) => {
+        const currentJobs =
+            activeTab === 'Top100'
+                ? topJobs
+                : activeTab === 'Entry'
+                    ? entryJobs
+                    : myJobs;
+
+        setSelectedRegion(region);
+
+        try {
+            const norm = normalizeRegion(region);
+            const filtered = currentJobs.filter(job => {
+                if (!job.location) return false;
+                if (norm === '광주' && job.location.includes('경기')) return false;
+                return job.location.includes(norm) || job.location.includes('전국');
+            });
+
+            setJobsByRegion(filtered);
+        } catch (error) {
+            console.error('지역별 공고 조회 실패:', error);
+            toast.error('지역별 공고를 불러오는데 실패했습니다');
+        }
+    }, [activeTab, topJobs, entryJobs, myJobs]);
 
     const renderCurrentJobs = (
         activeTab: 'Top100' | 'Entry' | 'MyJob',
@@ -31,9 +72,12 @@ const Home: React.FC<Props> = ({ userId, activeTab, setActiveTab, activeTabHandl
                 ? topJobs
                 : activeTab === 'Entry'
                     ? entryJobs
-                    : myJobs;
+                    : myJobs
 
-        if (currentJobs.length === 0) {
+        const jobsToRender = (selectedRegion ? JobsByRegion : currentJobs).slice(0, visibleCount);
+
+        if (currentJobs.length === 0 || (selectedRegion && JobsByRegion.length === 0)) {
+            const emptyMessage = '공고가 없습니다';
             return (
                 <div style={{
                     width: '100%',
@@ -42,59 +86,109 @@ const Home: React.FC<Props> = ({ userId, activeTab, setActiveTab, activeTabHandl
                     fontSize: '1rem',
                     padding: '40px 0'
                 }}>
-                    공고가 없습니다
+                    {emptyMessage}
                 </div>
             );
         }
 
-        return currentJobs.map(job => (
-            <a
-                key={job.id}
-                href={job.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="rect-card"
-            >
-                <div className="card-content">
-                    <div className="info">
-                        <div className="title">{job.title}</div>
-                        <div className="meta">
-                            <span>{job.company}</span>
-                            {job.location && <div className="sectors">{job.location}</div>}
-                            {job.sectors && <div className="sectors">{job.sectors}</div>}
-                            {job.experience && <span>{job.experience}</span>}
-                        </div>
-                    </div>
-                    <div className="meta-right">
-                        {job.views !== undefined && (
-                            <div className="views">조회수 {job.views.toLocaleString()}회</div>
-                        )}
-                        <div className="deadline">{job.deadline}</div>
-                    </div>
-                </div>
-            </a>
-        ));
+        return (
+            <>
+                {jobsToRender.map(job => (
+                    // eslint-disable-next-line jsx-a11y/anchor-is-valid
+                    <a
+                        key={job.id}
+                        href={'#'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="rect-card"
+                        onClick={(e)=>{
+                            e.preventDefault(); postClickHandler(job.id)}}>
 
+                        <div className="card-content">
+                            <div className="info">
+                                <div className="title">{job.title}</div>
+                                <div className="meta">
+                                    <span>{job.company}</span>
+                                    {job.location && <div className="sectors">{job.location}</div>}
+                                    {job.sectors && <div className="sectors">{job.sectors}</div>}
+                                    {job.experience && <span>{job.experience}</span>}
+                                </div>
+                            </div>
+                            <div className="meta-right">
+                                {job.views !== undefined && (
+                                    <div className="views">조회수 {job.views.toLocaleString()}회</div>
+                                )}
+                                <div className="deadline">{job.deadline}</div>
+                            </div>
+                        </div>
+                    </a>
+                ))}
+                <div ref={loadMoreRef} style={{height: '1px'}}/>
+            </>
+        );
     };
 
+    useEffect(() => {
+        //지역필터링이 적용된 상태에서 탭이 전환되는 경우
+        if (selectedRegion) handleRegionClick(selectedRegion);
+        else setJobsByRegion([]);
+
+        setVisibleCount(50);
+    }, [activeTab, handleRegionClick, selectedRegion]);
 
     useEffect(() => {
-        getLatestJobs()
-            .then(setLatestJobs)
-            .catch(console.error)
+        if (userId === '') {
+            // 비로그인: 랜덤 공고
+            getRandomJobs()
+                .then(setRecommendJobs)
+                .catch(console.error);
+        } else {
+            // 로그인: AI 추천 공고
+            getRecommendedJobs(userId)
+                .then(setRecommendJobs)
+                .catch(console.error);
+        }
 
         getTop100Jobs()
             .then(setTopJobs)
-            .catch(console.error)
+            .catch(console.error);
 
         getEntryLevelJobs()
             .then(setEntryJobs)
-            .catch(console.error)
+            .catch(console.error);
 
-    }, [])
+    }, [userId]);
+
+    // 스크롤 최하위로 하면 공고 추가 렌더링을 위한,,,
+    useEffect(() => {
+        const observer = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting) {
+                const currentJobs =
+                    activeTab === 'Top100'
+                        ? topJobs
+                        : activeTab === 'Entry'
+                            ? entryJobs
+                            : myJobs;
+
+                if (visibleCount < currentJobs.length) {
+                    setVisibleCount((prev) => prev + 50);
+                }
+            }
+        });
+
+        const currentTarget = loadMoreRef.current;
+        if (currentTarget) {
+            observer.observe(currentTarget);
+        }
+
+        return () => {
+            if (currentTarget) observer.unobserve(currentTarget);
+            observer.disconnect();
+        };
+    }, [visibleCount, activeTab, topJobs, entryJobs, myJobs]);
 
     useEffect(() => {
-        if(userId !== ''){ // todo: 토큰으로 검사해야한다  (app)
+        if(userId !== ''){ // 토큰검사는 app.tsx 에서 하고 userId를 하위 컴포넌트로 뿌림
             getMyJobs(userId)
                 .then(setMyJobs)
                 .catch(console.error)
@@ -111,21 +205,20 @@ const Home: React.FC<Props> = ({ userId, activeTab, setActiveTab, activeTabHandl
                     <div className="recommend-wrapper">
                         <div className="recommend-container">
                             {recommendJobs.map(job => (
-                                <a
+                                <div
                                     key={job.id}
-                                    href={job.link}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
+                                    onClick={() => navigate(`/consulting/${job.id}`)}
                                     className="recommend-card"
+                                    style={{cursor: 'pointer'}}
                                 >
                                     <div className="title">{job.title}</div>
                                     <div className="company">{job.company}</div>
                                     <div className="deadline">기한: {job.deadline}</div>
-                                </a>
+                                </div>
                             ))}
                         </div>
                         {userId === '' && (
-                            <div className="glass-overlay" onClick={()=> navigate("/signin")}>
+                            <div className="glass-overlay" onClick={() => navigate("/signin")}>
                                 로그인 후 공고를 추천 받아보세요
                             </div>
                         )}
@@ -137,19 +230,19 @@ const Home: React.FC<Props> = ({ userId, activeTab, setActiveTab, activeTabHandl
                     <div className="tabs">
                         <button
                             className={`tab ${activeTab === 'Top100' ? 'active' : ''}`}
-                            onClick={() => activeTabHandler(1)}
+                            onClick={() => {activeTabHandler(1);}}
                         >
                             Top100
                         </button>
                         <button
                             className={`tab ${activeTab === 'Entry' ? 'active' : ''}`}
-                            onClick={() => activeTabHandler(2)}
+                            onClick={() => {activeTabHandler(2);}}
                         >
                             신입
                         </button>
                         <button
-                            className={`tab ${activeTab === 'MyJob' ? 'active' : ''}`}
-                            onClick={() => activeTabHandler(3)}
+                            className={`tab ${activeTab === 'MyJob' ? 'active' : ''} ${userId === '' ? 'disabled-tab' : ''}`}
+                            onClick={() => {activeTabHandler(3);}}
                         >
                             나의 직무
                         </button>
@@ -159,10 +252,16 @@ const Home: React.FC<Props> = ({ userId, activeTab, setActiveTab, activeTabHandl
                             {renderCurrentJobs(activeTab, topJobs, entryJobs, myJobs)}
                         </div>
 
-                        <div className="graphic">여백</div>
+                        <div className="region-map">
+                            <Map
+                                onRegionClick={handleRegionClick}
+                                selectedRegion={selectedRegion}
+                            />
+                        </div>
                     </div>
                 </section>
             </div>
+            <Footer />
         </div>
     );
 };

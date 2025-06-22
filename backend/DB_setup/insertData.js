@@ -23,6 +23,16 @@ async function insertData(dataArray) {
                 const companyId = companyRows[0]?.company_id;
                 if (!companyId) throw new Error('company_id 조회 실패');
 
+                const [duplicateCheck] = await connection.execute(
+                    'SELECT job_posting_id FROM job_postings WHERE company_id = ? AND title = ?',
+                    [companyId, data['제목']]
+                );
+                if (duplicateCheck.length > 0) {
+                    console.log(`중복으로 삽입 생략: ${data['제목']}`);
+                    await connection.rollback(); // 트랜잭션 롤백
+                    continue;
+                }
+
                 // 학력 정보 삽입
                 if (data['학력']) {
                     await connection.execute('INSERT IGNORE INTO educations (education_level) VALUES (?)', [data['학력']]);
@@ -171,8 +181,12 @@ function parseSectorsAndModifiedDate(sectorStr) {
 // 크롤링 과정 및 page 에 따라 시간이 소요될 수 있습니다.
 // 읽어오는 공고의 수는 page * 40,
 async function main() {
-    const dataArray = await crawlSaramin(5); //250
+    const dataArray = await crawlSaramin(20); //250
     await insertData(dataArray);
 }
 
-main().catch(console.error);
+if (require.main === module) {
+    main().catch(console.error); // 직접 실행할 때만 실행되도록
+}
+
+module.exports = insertData;

@@ -1,5 +1,8 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
+const moment = require('moment');
+require('moment/locale/ko');
+moment.locale('ko');
 
 /**
  * 사람인 채용정보 크롤링 함수
@@ -11,6 +14,19 @@ async function crawlSaramin(pages = 1) {
     const headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
     };
+    const excludedRegions = [
+        '미국',
+        '일본',
+        '중국·홍콩',
+        '북·중미',
+        '유럽',
+        '아프리카',
+        '기타해외',
+        '아시아·중동',
+        '남미',
+        '오세아니아',
+        '남극대륙'
+    ];
 
     for (let page = 1; page <= pages; page++) {
         const url = `https://www.saramin.co.kr/zf_user/search/recruit?searchType=search&searchword=채용&recruitPage=${page}&recruitSort=relation&recruitPageCount=40`;
@@ -28,14 +44,31 @@ async function crawlSaramin(pages = 1) {
 
                     const conditions = $(element).find('.job_condition span');
 
-                    // 연속 된 하나로 셋팅
                     const location = conditions.eq(0).text().trim().replace(/\s+/g, ' ') || '';
+
+                    // 해외 공고의 경우 긁어오지 않도록 (지도 필터링 기능을 위해)
+                    if (excludedRegions.some(keyword => location.includes(keyword))) return;
+
                     const experience = conditions.eq(1).text().trim() || '';
                     const education = conditions.eq(2).text().trim() || '';
                     const employmentType = conditions.eq(3).text().trim() || '';
                     const salary = conditions.eq(4).text().trim() || '추후 협의';
 
-                    const deadline = $(element).find('.job_date .date').text().trim() || '';
+                    const deadlineRaw = $(element).find('.job_date .date').text().trim() || '';
+
+                    // 진행 예정 제외
+                    if (deadlineRaw.includes('진행예정')) return;
+
+                    // 오늘마감, 내일마감 처리
+                    let deadline = deadlineRaw;
+                    if (deadlineRaw.includes('오늘')) {
+                        deadline = moment().format('MM/DD(ddd)'); // ex: 06/21(금)
+                    } else if (deadlineRaw.includes('내일')) {
+                        deadline = moment().add(1, 'days').format('MM/DD(ddd)'); // ex: 06/22(토)
+                    }
+
+                    deadline = deadline.replace(/^~\s*/, '').trim();
+
                     let sector = $(element).find('.job_sector').text().trim() || '';
 
                     // sector 처리: " 외" 제거 및 중복 제거

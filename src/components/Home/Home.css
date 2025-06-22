@@ -3,16 +3,20 @@
     font-family: sans-serif;
     justify-content: center;
     z-index: 1;
+
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
 }
 
 .home-children {
-    position: absolute;
-    height: 100%;
+    position: relative;
     width: 1250px;
     padding: 90px 130px 0 130px;
     left: 50%;
     transform: translateX(-50%);
     top: 0;
+    flex: 1;
 }
 
 .section-recommend h2 {
@@ -118,8 +122,13 @@
     color: #2563eb;
 }
 
+.disabled-tab {
+    color: #ccc !important;
+}
+
 .list-and-graphic {
     display: flex;
+    gap: 24px;
 }
 
 .list-container {
@@ -127,6 +136,8 @@
 }
 
 .rect-card {
+    width: 800px;
+    max-width: 100%;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -147,14 +158,20 @@
 .rect-card .info {
     flex: 1;
     display: flex;
+    max-width: 90%;
     flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
 }
 
 .rect-card .title {
+    display: block;
     font-weight: bold;
-    overflow: hidden;
     white-space: nowrap;
+    overflow: hidden;
     text-overflow: ellipsis;
+    min-width: 0;
+    max-width: 100%;
 }
 
 .rect-card .meta {
@@ -176,7 +193,7 @@
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    justify-content: center; 
+    justify-content: center;
     min-height: 48px;
     font-size: 0.8rem;
     color: #64748b;
@@ -184,15 +201,15 @@
     gap: 4px;
 }
 
-.graphic {
+.region-map {
     flex: 1;
-    background-color: #2563eb; /* 강조 블루 */
     margin-left: 16px;
     border-radius: 4px;
-    color: #f8fafc;
-    display: flex;
+    position: sticky;
+    top: 80px;
+    align-self: flex-start;
     justify-content: center;
     align-items: center;
     font-size: 1.2rem;
+    overflow: hidden;
 }
-

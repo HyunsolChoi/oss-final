@@ -1,6 +1,6 @@
 // src/components/Email.tsx
 import React, {useEffect, useState} from 'react';
-import { requestEmailAuth, verifyEmailAuth } from '../../api/auth';
+import { requestEmailAuth, verifyEmailAuth, checkEmailDuplicate } from '../../api/auth';
 import { toast } from 'react-toastify';
 import './Email.css';
 import './Signup.css';
@@ -8,8 +8,12 @@ import {useNavigate} from "react-router-dom";
 import { faEnvelope, faKey } from '@fortawesome/free-solid-svg-icons';
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 
-const Email: React.FC = () => {
-    const [email, setEmail] = useState('');
+interface EmailProps {
+    email: string;
+    setEmail: (email: string) => void;
+}
+
+const Email: React.FC<EmailProps> = ({ email, setEmail }) => {
     const [inputCode, setInputCode] = useState('');
     const [codeSent, setCodeSent] = useState(false);
     const [isVerified, setIsVerified] = useState(false);
@@ -21,7 +25,6 @@ const Email: React.FC = () => {
     useEffect(() => {
         let interval: NodeJS.Timeout;
         if (codeSent && !isVerified) {
-            setTimeLeft(180);
             interval = setInterval(() => {
                 setTimeLeft(prev => {
                     if (prev <= 1) {
@@ -60,16 +63,21 @@ const Email: React.FC = () => {
             return;
         }
 
-        // todo: 이메일 중복 검사 해야함
-
-        setIsSending(true);
-        setCodeSent(true);
-
         try {
+            const isAvailable = await checkEmailDuplicate(email);
+            if (!isAvailable) {
+                toast.error('이미 가입된 이메일입니다');
+                return;
+            }
+
+            setIsSending(true);
+            setCodeSent(true);
+            setTimeLeft(180);
+
             await requestEmailAuth(email); // 실제 메일 보내는 함수
         } catch (err: any) {
             console.error(err);
-            toast.error(err.message);
+            toast.error("유효하지 않은 이메일입니다");
             setCodeSent(false);
         } finally {
             setIsSending(false);           // 전송 중 상태 끝
@@ -81,16 +89,6 @@ const Email: React.FC = () => {
         try {
             await verifyEmailAuth(email, inputCode);
             setIsVerified(true);
-
-
-            document.cookie = [
-                'emailVerified=true',
-                'path=/',
-                'max-age=300', // 5분
-                'sameSite=Lax',
-                process.env.NODE_ENV === 'production' ? 'secure' : ''
-            ].filter(Boolean).join('; ');
-
 
         } catch (err: any) {
             console.error(err);
@@ -114,9 +112,9 @@ const Email: React.FC = () => {
                         />
                         <span
                             className={`show-toggle${isSending ? ' disabled' : ''}`}
-                            onClick={() => {
+                            onClick={async () => {
                                 if (isSending) return;
-                                sendVerificationCode();
+                                await sendVerificationCode();
                             }}
                         >
                             {codeSent ? '재요청' : '인증 요청'}

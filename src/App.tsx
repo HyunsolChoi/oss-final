@@ -5,12 +5,16 @@ import { jwtDecode } from 'jwt-decode';
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
 import Home from './components/Home/Home';
-import Navbar from './components/Navbar/Navbar';
+import Navbar from './components/utils/Navbar/Navbar';
 import Signin from "./components/Signin/Signin";
 import Signup from "./components/Signup/Signup";
 import Consulting from "./components/Consulting/Consulting";
 import Agreement from "./components/Signup/TermsAgreement"
 import Email from "./components/Signup/Email";
+import Profile from "./components/Profile/Profile";
+import Search from "./components/Search/Search";
+import FindIdPw from "./components/Signin/FindIdPw";
+import Bookmark from "./components/Bookmark/Bookmark";
 
 interface JwtPayload {
     userId: string;
@@ -20,10 +24,11 @@ interface JwtPayload {
 function App() {
     const [activeTab, setActiveTab] = useState<'Top100' | 'Entry' | 'MyJob'>('Top100');
     const [userId, setUserId] = useState('');
+    const [email, setEmail] = useState('');
 
     const navigate = useNavigate();
 
-    const activeTabHandler = (menu: 1 | 2 | 3) => {
+    const activeTabHandler: (tabIndex: 1 | 2 | 3 | 4) => void = (menu: 1 | 2 | 3 | 4) => {
         let newTab: 'Top100' | 'Entry' | 'MyJob';
         if (menu === 1) {
             newTab = 'Top100';
@@ -37,6 +42,7 @@ function App() {
             }
             newTab = 'MyJob';
         }
+
         if (activeTab !== newTab) {
             setActiveTab(newTab);
         }
@@ -53,18 +59,18 @@ function App() {
                 if (decoded.exp > now) {
                     // 토큰 유효 → 로그인 유지
                     setUserId(decoded.userId);
-                    return true;
+                    return decoded.userId;
                 } else {
                     // 토큰 만료
                     setUserId('');
                     localStorage.removeItem('token-careerfit');
-                    return false;
+                    return '';
                 }
             } catch (e) {
                 console.error('토큰 디코딩 실패', e);
                 setUserId('');
                 localStorage.removeItem('token-careerfit');
-                return false;
+                return '';
             }
         }
     }
@@ -73,47 +79,61 @@ function App() {
         checkToken();
     }, []);
 
-
     return (
-    <div>
-        <Navbar activeTab={activeTab} setActiveTab={setActiveTab} activeTabHandler={activeTabHandler} userId={userId}/>
-        <Routes>
-            <Route
-                path="/"
-                element={<Home activeTab={activeTab} setActiveTab={setActiveTab} activeTabHandler={activeTabHandler} userId={userId}/>}
+        <div>
+            <Navbar activeTab={activeTab} activeTabHandler={activeTabHandler} userId={userId}/>
+            <Routes>
+                <Route
+                    path="/"
+                    element={<Home activeTab={activeTab} activeTabHandler={activeTabHandler} userId={userId}/>}
+                />
+                <Route
+                    path="/signin"
+                    element={<Signin setUserId={setUserId} checkToken={checkToken}/>}
+                />
+                <Route
+                    path="/agreement"
+                    element={<Agreement/>}>
+                </Route>
+                <Route
+                    path="/email"
+                    element={<Email email={email} setEmail={setEmail}/>}>
+                </Route>
+                <Route
+                    path="/signup"
+                    element={<Signup email={email}/>}>
+                </Route>
+                <Route
+                    path="/consulting/:jobId"
+                    element={<Consulting checkToken={checkToken}/>}>
+                </Route>
+                <Route path="/search"
+                       element={<Search />} >
+                </Route>
+                <Route
+                    path="/profile"
+                    element={<Profile userId={userId}/>}>
+                </Route>
+                <Route
+                    path="/find_idpw"
+                    element={<FindIdPw checkToken={checkToken}/>}>
+                </Route>
+                <Route
+                    path="/bookmark"
+                    element={<Bookmark checkToken={checkToken}/>}>
+                </Route>
+            </Routes>
+            <ToastContainer
+                position="top-center"
+                autoClose={2000}
+                hideProgressBar
+                newestOnTop
+                closeOnClick
+                draggable={false}
+                pauseOnHover
             />
-            <Route
-                path="/signin"
-                element={<Signin userId={userId} setUserId={setUserId}/>}
-            />
-            <Route
-                path="/agreement"
-                element={<Agreement/>}>
-            </Route>
-            <Route
-                path="/email"
-                element={<Email/>}>
-            </Route>
-            <Route
-                path="/signup"
-                element={<Signup/>}>
-            </Route>
-            <Route
-                path="/consulting"
-                element={<Consulting/>} // token 넘겨줘서 유효성 판단 후 진입 가능하도록 해야함
-            ></Route>
-        </Routes>
-        <ToastContainer
-            position="top-center"
-            autoClose={2000}
-            hideProgressBar
-            newestOnTop
-            closeOnClick
-            draggable={false}
-            pauseOnHover
-        />
-    </div>
-  );
+        </div>
+    );
 }
 
 export default App;
