@@ -307,7 +307,7 @@
     position: relative; /* absolute 대신 relative 사용 */
     will-change: transform, opacity;
     transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-    opacity 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+                opacity 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     transform: translateX(0);
     opacity: 1;
 }
@@ -335,7 +335,7 @@
 
     will-change: transform, opacity;
     transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-    opacity 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+                opacity 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .new-info-form.slide-in {
@@ -485,12 +485,12 @@
 @media (max-width: 768px) {
     .info-form {
         transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-        opacity 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+                    opacity 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     }
 
     .new-info-form {
         transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-        opacity 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+                    opacity 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     }
 }
 
@@ -501,6 +501,6 @@
 
 /* 버튼이 비활성화됐을 때 시각적 구분 (선택) */
 .edit-button.loading {
-    cursor: not-allowed;
-    opacity: 0.7;
+  cursor: not-allowed;
+  opacity: 0.7;
 }

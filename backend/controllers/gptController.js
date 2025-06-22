@@ -227,6 +227,18 @@ exports.getConsultingContext = async (req, res) => {
     }
 
     try {
+        // 갱신 요청인 경우 횟수 체크
+        if (isRetry) {
+            const canRetry = await checkRetryAvailable(userId, job.id);
+            if (!canRetry) {
+                return res.status(403).json({
+                    success: false,
+                    message: '하루에 한 번만 갱신할 수 있습니다. 내일 다시 시도해주세요.',
+                    retryAvailable: false
+                });
+            }
+        }
+
         // 갱신 요청이 아닌 경우에만 기존 컨설팅 여부 확인
         if(!isRetry){
             const [rows] = await executeQuery(
@@ -240,7 +252,9 @@ exports.getConsultingContext = async (req, res) => {
                 const answer = typeof raw === 'object' ? raw : safeJSONParse(raw);
 
                 if (answer) {
-                    return res.json({ success: true, answer });
+                    // 갱신 가능 여부도 함께 반환
+                    const canRetry = await checkRetryAvailable(userId, job.id);
+                    return res.json({ success: true, answer, retryAvailable: canRetry });
                 }
             }
         }
@@ -257,7 +271,7 @@ exports.getConsultingContext = async (req, res) => {
         );
 
         const systemPrompt = `
-너는 채용 전문가이자 커리어 컨설턴트다.  
+너는 채용 전문가이자 커리어 컨설턴트다.
 목표는 지원자의 이력과 공고의 요구사항, 사전 질문과 답변을 바탕으로 **현실적이고 전략적인 피드백**을 제공하는 것이다.
 
 [피드백 작성 규칙]
@@ -282,9 +296,9 @@ exports.getConsultingContext = async (req, res) => {
 사용자 학력이 명시되지 않은 경우, 학력 조건에 관계없이 일반적인 경우로 간주하여 피드백을 제공할 것.
 
 [피드백 출력 형식]
-GPT는 반드시 아래 둘 중 하나의 JSON 형식으로 응답해야 한다.  
-**그 외 텍스트, 설명, 주석 등은 절대 포함하지 말 것.**  
-출력 결과는 반드시 JSON.parse() 가능한 유효한 형식이어야 하며, 속성명과 값은 모두 쌍따옴표(")로 감쌀 것.  
+GPT는 반드시 아래 둘 중 하나의 JSON 형식으로 응답해야 한다.
+**그 외 텍스트, 설명, 주석 등은 절대 포함하지 말 것.**
+출력 결과는 반드시 JSON.parse() 가능한 유효한 형식이어야 하며, 속성명과 값은 모두 쌍따옴표(")로 감쌀 것.
 각 항목 사이에는 쉼표(,)를 사용하되, 마지막 항목 뒤에는 쉼표를 사용하지 말 것.
 
 [출력 형식 결정 조건]
@@ -339,13 +353,19 @@ ${gpt_questions.map((q, i) => `Q${i + 1}. ${q}\nA${i + 1}. ${user_answers[i] || 
 
         const rawAnswer = await callGPT(systemPrompt, userPrompt);
 
-
         await executeQuery(
             `REPLACE INTO consultations (user_id, job_posting_id, gpt_answer) VALUES (?, ?, ?)`,
             [userId, job.id, JSON.stringify(rawAnswer)]
         );
 
-        return res.json({ success: true, answer: rawAnswer });
+        // 갱신인 경우 기록
+        if (isRetry) {
+            await recordRetry(userId, job.id);
+        }
+
+        // 갱신 가능 여부도 함께 반환
+        const canRetryAfter = await checkRetryAvailable(userId, job.id);
+        return res.json({ success: true, answer: rawAnswer, retryAvailable: canRetryAfter });
 
     } catch (err) {
         console.error('[ERROR] getConsultingContext:', err);
@@ -355,6 +375,7 @@ ${gpt_questions.map((q, i) => `Q${i + 1}. ${q}\nA${i + 1}. ${user_answers[i] || 
         });
     }
 };
+
 
 
 // 질문 생성 API
@@ -417,15 +438,15 @@ exports.processUserKeywords = async (req, res) => {
 
         // GPT 프롬프트 구성
         const systemPrompt = `
-        너는 커리어 분석 전문가이다.  
+        너는 커리어 분석 전문가이다.
         지원자의 직무와 기술 스택, 즐겨찾은 채용공고 직무를 기반으로 직무 관련 키워드 5개를 선정해라.
-        
+
         [조건]
         - 모든 키워드는 공백 없이 하나의 단어로 구성되어야 함 (예: "백엔드", "Java", "DB", "회계", "인사" 등)
         - 반드시 직무 또는 기술과 관련 있는 핵심 키워드여야 함
         - 키워드는 추상적이지 않고 구체적이어야 함 (예: "개발", "기술" 금지)
         - 아래 JSON 형식으로만 응답하라. 다른 설명, 주석 포함 금지.
-        
+
         [응답 형식]
         {
           "keywords": ["키워드1", "키워드2", "키워드3", "키워드4", "키워드5"]
@@ -461,45 +482,92 @@ exports.processUserKeywords = async (req, res) => {
 };
 
 
-// 질문과 답변 저장 API => 혹시라도 질문 더 많다는 기능 추가로 활용 가능
+// (user_id 단위로 전부 지우고, 새 4개 질문·답변을 저장)
 exports.updateQuestionsAndAnswers = async (req, res) => {
     const { userId, questions, answers } = req.body;
 
-    if (!userId || !questions || !answers || questions.length !== answers.length) {
-        return res.status(400).json({
-            success: false,
-            message: '유효하지 않은 데이터입니다'
-        });
+    // 구조,타입 검사
+    if (
+        !userId ||
+        !Array.isArray(questions) ||
+        !Array.isArray(answers) ||
+        questions.length !== answers.length
+    ) {
+    return res
+      .status(400)
+      .json({ success: false, message: '유효하지 않은 데이터' });
     }
 
     try {
-        // 각 질문과 답변을 저장
-        const queries = [];
-        for (let i = 0; i < questions.length; i++) {
-            // 질문 저장
-            if(questions[i].trim() && answers[i].trim()){
-                queries.push({
-                    query: `INSERT INTO user_gpt (user_id, gpt_question, user_answer) VALUES (?, ?, ?)`,
-                    params: [userId, questions[i].trim(), answers[i].trim()]
-                });
-            }
-        }
+        /**
+         *  1. user_id 기준 기존 행 전체 삭제
+         *  2. 새 질문·답변 INSERT (trim & 타입 검사 포함)
+         */
+        const queries = [
+          {
+            query: 'DELETE FROM user_gpt WHERE user_id = ?',
+            params: [userId],
+          },
+          ...questions
+            .map((q, idx) => {
+              const a = answers[idx];
+              if (typeof q !== 'string' || typeof a !== 'string') return null;
+              const qq = q.trim();
+              const aa = a.trim();
+              return qq && aa
+                ? {
+                    query:
+                      'INSERT INTO user_gpt (user_id, gpt_question, user_answer) VALUES (?, ?, ?)',
+                    params: [userId, qq, aa],
+                  }
+                : null;
+            })
+            .filter(Boolean),
+        ];
 
-        // 답변 저장
-        if (queries.length > 0) {
-            await executeTransaction(queries);
-        }
+        if (queries.length > 1) await executeTransaction(queries);
 
-        return res.json({
-            success: true,
-            message: '질문과 답변이 저장되었습니다'
-        });
+        return res.json({ success: true, message: '질문/답변 갱신 완료' });
     } catch (error) {
-        console.error('질문/답변 저장 오류:', error);
-        return res.status(500).json({
-            success: false,
-            message: '저장 중 오류가 발생했습니다'
-        });
+        console.error('updateQuestionsAndAnswers error:', error.stack || error);
+        return res.status(500).json({ success: false, message: '갱신 중 오류' });
     }
 };
 
+// 컨설팅 갱신 가능 여부 체크 함수
+async function checkRetryAvailable(userId, jobId) {
+    try {
+        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD 형식
+
+        const [rows] = await executeQuery(
+            `SELECT retry_count FROM consultation_retries
+             WHERE user_id = ? AND job_posting_id = ? AND retry_date = ?`,
+            [userId, jobId, today]
+        );
+
+        // 오늘 갱신한 기록이 없으면 가능
+        if (rows.length === 0) return true;
+
+        // 이미 1번 갱신했으면 불가능
+        return rows[0].retry_count < 1;
+    } catch (err) {
+        console.error('[checkRetryAvailable 오류]', err);
+        return false;
+    }
+}
+
+// 갱신 횟수 기록 함수
+async function recordRetry(userId, jobId) {
+    try {
+        const today = new Date().toISOString().split('T')[0];
+
+        await executeQuery(
+            `INSERT INTO consultation_retries (user_id, job_posting_id, retry_date, retry_count)
+             VALUES (?, ?, ?, 1)
+             ON DUPLICATE KEY UPDATE retry_count = retry_count + 1`,
+            [userId, jobId, today]
+        );
+    } catch (err) {
+        console.error('[recordRetry 오류]', err);
+    }
+}

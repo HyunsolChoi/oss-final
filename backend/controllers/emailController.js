@@ -10,8 +10,8 @@ const transporter = nodemailer.createTransport({
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
     },
-    tls: {
-        rejectUnauthorized: false
+    tls:{
+        rejectUnauthorized: false // 개발/테스트용으로만, 프로덕션에서는 CA 인증서 추가 방식 권장
     }
 });
 

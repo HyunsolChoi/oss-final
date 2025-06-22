@@ -107,6 +107,7 @@ const ProfileInfo: React.FC<Props> = ({ userId }) => {
         return regex.test(text);
     };
 
+
     const generateGptQuestion = async () => {
         if (isGenerating) return;
 
@@ -178,7 +179,7 @@ const ProfileInfo: React.FC<Props> = ({ userId }) => {
         } catch (err: any) {
             toast.error(err.message || '질문 생성 중 오류 발생');
         } finally {
-            setIsGenerating(false);
+             setIsGenerating(false);
         }
     };
 
@@ -243,23 +244,23 @@ const ProfileInfo: React.FC<Props> = ({ userId }) => {
         }
     };
 
-    const handlePreviousQuestion = () => {
-        if (currentQuestion > 1) {
-            setCurrentQuestion(currentQuestion - 1);
-        } else {
-            // 애니메이션 시작
-            setNewFormAnimating(false);
-            setIsTransitioning(false);
+   const handlePreviousQuestion = () => {
+       if (currentQuestion > 1) {
+           setCurrentQuestion(currentQuestion - 1);
+       } else {
+           // 애니메이션 시작
+           setNewFormAnimating(false);
+           setIsTransitioning(false);
 
-            // 애니메이션 완료 후 상태 초기화
-            setTimeout(() => {
-                setShowNewForm(false);
-                setEditMode(true);
-                setCurrentQuestion(1);
-                setAnswers(['', '', '','']);
-            }, 400); // CSS transition 시간과 동일
-        }
-    };
+           // 애니메이션 완료 후 상태 초기화
+           setTimeout(() => {
+               setShowNewForm(false);
+               setEditMode(true);
+               setCurrentQuestion(1);
+               setAnswers(['', '', '','']);
+           }, 400); // CSS transition 시간과 동일
+       }
+   };
 
     // 새 정보 입력 폼 (슬라이드 인 되는 폼)
     const renderNewInfoForm = () => (
@@ -360,20 +361,20 @@ const ProfileInfo: React.FC<Props> = ({ userId }) => {
                     <label>
                         기술 (최소 1개)
                         {userData.skills.map((skill, idx) => (
-                            <div className="info-input-group" key={idx}>
-                                <input
+                           <div className="info-input-group" key={idx}>
+                            <input
                                     type="text"
                                     value={skill}
                                     readOnly={!editMode}
                                     onChange={(e) => handleSkillChange(idx, e.target.value)}
                                     className={!editMode ? 'read-only' : ''}
                                 />
-                                {editMode && (
-                                    <span className="info-show-toggle" onClick={() => removeSkillField(idx)}>
+                               {editMode && (
+                                   <span className="info-show-toggle" onClick={() => removeSkillField(idx)}>
                                         삭제
                                     </span>
-                                )}
-                            </div>
+                               )}
+                           </div>
                         ))}
                     </label>
 
