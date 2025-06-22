@@ -121,9 +121,12 @@ const Consulting: React.FC<Props> = ({checkToken}) => {
                 if (res.success && res.message) {
                     try {
                         // 문자열이면 후처리
-                        const cleaned = res.message
-                            .replace(/,\s*}/g, '}')
-                            .replace(/,\s*]/g, ']');
+                        const cleaned =
+                            typeof res.message === 'string'
+                                    ? res.message
+                                        .replace(/,\s*}/g, '}')   // 마지막 객체 항목 쉼표 제거
+                                        .replace(/,\s*]/g, ']')   // 마지막 배열 항목 쉼표 제거
+                                    : res.message;
 
                         setGptAnswer(cleaned);
 
