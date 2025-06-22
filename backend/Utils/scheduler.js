@@ -40,41 +40,6 @@ async function cleanupManageView() {
     }
 }
 
-// 1시간마다 실행 (60 * 60 * 1000 ms)
-function startScheduler() {
-    cleanupExpiredTokens().catch(console.error);
-        cleanupExpiredVerificationCodes().catch(console.error);
-        cleanupManageView().catch(console.error);
-        cleanupConsultationRetries().catch(console.error);
-
-        //매 1시간마다 토큰 및 인증코드 클리너
-        setInterval(() => {
-            cleanupExpiredTokens().catch(console.error);
-            cleanupExpiredVerificationCodes().catch(console.error);
-        }, 60 * 60 * 1000); // 1시간
-
-        // 매 10분마다 view 클리너
-        setInterval(() => {
-            cleanupManageView().catch(console.error);
-        }, 10 * 60 * 1000); // 10분
-
-        // 매일 00:00에 컨설팅 갱신 기록 정리
-        const now = new Date();
-        const tomorrow = new Date(now);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        tomorrow.setHours(0, 0, 0, 0);
-
-        const msUntilMidnight = tomorrow.getTime() - now.getTime();
-
-        setTimeout(() => {
-            cleanupConsultationRetries().catch(console.error);
-            // 이후 매일 자정에 실행
-            setInterval(() => {
-                cleanupConsultationRetries().catch(console.error);
-            }, 24 * 60 * 60 * 1000); // 24시간
-        }, msUntilMidnight);
-}
-
 //컨설팅 갱신 횟수 정리
 async function cleanupConsultationRetries() {
     try {
@@ -86,6 +51,32 @@ async function cleanupConsultationRetries() {
     } catch (error) {
         console.error('[컨설팅 갱신 클리너 오류]:', error.message);
     }
+}
+
+// 1시간마다 실행 (60 * 60 * 1000 ms)
+function startScheduler() {
+    // 매 1시간마다 토큰 및 인증코드 클리너
+    setInterval(() => {
+        cleanupExpiredTokens().catch(console.error);
+        cleanupExpiredVerificationCodes().catch(console.error);
+    }, 60 * 60 * 1000);
+
+    // 매 10분마다 view 클리너
+    setInterval(() => {
+        cleanupManageView().catch(console.error);
+    }, 10 * 60 * 1000);
+
+    // 매일 00시에 refreshData 실행
+    cron.schedule('00 00 * * *', async () => {
+        cleanupConsultationRetries().catch(console.error);
+        console.log('[00시 갱신] refreshData 실행 시작');
+        try {
+            await refreshData();
+            console.log('[00시 갱신] refreshData 실행 완료');
+        } catch (error) {
+            console.error('[00시 갱신 오류]:', error.message);
+        }
+    });
 }
 
 module.exports = { startScheduler };

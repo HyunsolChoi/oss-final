@@ -38,12 +38,16 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
+    "start:backend": "cross-env PORT=5000 nodemon backend/server.js",
+    "start:frontend": "cross-env HOST=0.0.0.0 PORT=3000 NODE_OPTIONS=--max_old_space_size=4096 react-scripts start",
+    "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+
     "dev:backend": "cross-env PORT=5000 nodemon backend/server.js",
     "dev:frontend": "cross-env PORT=3000 react-scripts start",
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+
+    "build": "react-scripts build",
+    "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
   "devDependencies": {
@@ -52,7 +56,8 @@
     "@types/topojson": "^3.2.6",
     "concurrently": "^7.0.0",
     "cross-env": "^7.0.3",
-    "nodemon": "^2.0.22"
+    "nodemon": "^2.0.22",
+    "serve": "^14.2.4"
   },
   "eslintConfig": {
     "extends": [

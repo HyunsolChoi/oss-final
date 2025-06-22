@@ -51,7 +51,7 @@ async function refreshData() {
     const existingHashes = new Set(rows.map(r => r.link_hash));
 
     // 3. 새 데이터 크롤링
-    const crawledData = await crawlSaramin(10); // 최대 250
+    const crawledData = await crawlSaramin(200); // 최대 250
 
     // 4. 중복 제거
     const filteredData = crawledData.filter(job => {
