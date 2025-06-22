@@ -27,23 +27,23 @@ interface Region {
 
 // 지역별 색상 매핑을 상수로 분리
 const REGION_COLORS: Record<string, string> = {
-    '서울특별시': '#F59E0B',
-    '경기도': '#84CC16',
-    '인천광역시': '#06B6D4',
-    '강원특별자치도': '#10B981',
-    '충청북도': '#EF4444',
-    '충청남도': '#F97316',
-    '대전광역시': '#14B8A6',
-    '세종특별자치시': '#A855F7',
-    '전북특별자치도': '#3B82F6',
-    '전라남도': '#F472B6',
-    '광주광역시': '#C026D3',
-    '경상북도': '#0EA5E9',
-    '대구광역시': '#DC2626',
-    '경상남도': '#FDE047',
-    '부산광역시': '#7C3AED',
-    '울산광역시': '#FB923C',
-    '제주특별자치도': '#059669'
+    '서울특별시':      '#6366F1',
+    '경기도':          '#6366F1',
+    '인천광역시':      '#6366F1',
+    '강원특별자치도':  '#6366F1',
+    '충청북도':        '#6366F1',
+    '충청남도':        '#6366F1',
+    '대전광역시':      '#6366F1',
+    '세종특별자치시':  '#6366F1',
+    '전북특별자치도':  '#6366F1',
+    '전라남도':        '#6366F1',
+    '광주광역시':      '#6366F1',
+    '경상북도':        '#6366F1',
+    '대구광역시':      '#6366F1',
+    '경상남도':        '#6366F1',
+    '부산광역시':      '#6366F1',
+    '울산광역시':      '#6366F1',
+    '제주특별자치도':  '#6366F1'
 };
 
 //호버하면 지역이름 맨 위로
@@ -271,7 +271,7 @@ const Map: React.FC<Props> = ({ onRegionClick, selectedRegion }) => {
                                     ${isHovered ? 'hovered' : ''}
                                     ${isFiltered ? 'filtered' : ''}
                                 `}
-                                fill={isSelected ? '#1e40af' : region.color}
+                                fill={isSelected || isHovered ? '#4F46E5' : region.color}
                                 stroke="#ffffff"
                                 strokeWidth="2"
                                 style={{
@@ -299,14 +299,17 @@ const Map: React.FC<Props> = ({ onRegionClick, selectedRegion }) => {
                                 className="region-label"
                                 textAnchor="middle"
                                 dominantBaseline="middle"
-                                fontSize={isSelected ? '10' : '9'}
-                                fontWeight={isSelected ? '800' : '700'}
-                                fill={isSelected ? '#ffffff' : '#1f2937'}
+                                fontSize={isSelected ? 15 : 14}
+                                fontWeight={isSelected ? 800 : 600}
+                                /* 💡 fill 로 상태 구분 */
+                                fill={
+                                    (isHovered || isSelected) ? '#FFFFFF' : '#E0E7FF'
+                                }
+                                stroke={ (isHovered || isSelected) ? '#0f172a' : '#1e293b' }
+                                /* Hover/선택 시에만 완전히 보이게 */
                                 style={{
-                                    /* ✨ HERE ------------- */
                                     opacity: isHovered || isSelected ? 1 : 0,
                                     transition: 'opacity .25s ease',
-                                    /* 기존 속성 유지 */
                                     pointerEvents: 'none',
                                     userSelect: 'none',
                                 }}

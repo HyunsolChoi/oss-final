@@ -36,9 +36,9 @@ const Agreement: React.FC = () => {
             document.cookie = [
                 'careerfit_agreementAccepted=true',
                 'path=/',
-                'max-age=3600',       // 1시간(초 단위)
+                'max-age=3600',
                 'sameSite=Lax',
-                process.env.NODE_ENV === 'production' ? 'secure' : ''
+                window.location.protocol === 'https:' ? 'secure' : ''
             ].filter(Boolean).join('; ');
 
             navigate('/email');
