@@ -40,6 +40,19 @@ async function cleanupManageView() {
     }
 }
 
+//컨설팅 갱신 횟수 정리
+async function cleanupConsultationRetries() {
+    try {
+        await executeQuery(`
+            DELETE FROM consultation_retries
+            WHERE retry_date < CURDATE()
+        `);
+        console.log(`[컨설팅 갱신 클리너] 이전 날짜 기록 삭제 완료`);
+    } catch (error) {
+        console.error('[컨설팅 갱신 클리너 오류]:', error.message);
+    }
+}
+
 // 1시간마다 실행 (60 * 60 * 1000 ms)
 function startScheduler() {
     // 매 1시간마다 토큰 및 인증코드 클리너
@@ -55,6 +68,7 @@ function startScheduler() {
 
     // 매일 00시에 refreshData 실행
     cron.schedule('00 00 * * *', async () => {
+        cleanupConsultationRetries().catch(console.error);
         console.log('[00시 갱신] refreshData 실행 시작');
         try {
             await refreshData();
